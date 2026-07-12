@@ -1,49 +1,65 @@
 import { useState, useCallback, useEffect } from 'react'
-import { initialNotifications, type AppNotification } from '@/lib/ai-data'
-
-let globalNotifications: AppNotification[] = [...initialNotifications]
-const listeners: Array<(notifications: AppNotification[]) => void> = []
-
-function emit() {
-  listeners.forEach((fn) => fn([...globalNotifications]))
-}
+import {
+  getNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+  formatTimestamp,
+} from '@/services/notifications'
+import { useRealtime } from '@/hooks/use-realtime'
+import type { AppNotification } from '@/lib/ai-data'
 
 export function useNotificationsStore() {
-  const [notifications, setNotifications] = useState<AppNotification[]>(globalNotifications)
+  const [notifications, setNotifications] = useState<AppNotification[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const loadNotifications = useCallback(async () => {
+    try {
+      const records = await getNotifications()
+      setNotifications(
+        records.map((r) => ({
+          id: r.id,
+          type: r.type as any,
+          channel: r.channel as any,
+          title: r.title,
+          message: r.message,
+          priority: r.priority as any,
+          timestamp: formatTimestamp(r.created),
+          read: r.read,
+        })),
+      )
+    } catch {
+      setNotifications([])
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    const listener = (n: AppNotification[]) => setNotifications(n)
-    listeners.push(listener)
-    return () => {
-      const idx = listeners.indexOf(listener)
-      if (idx > -1) listeners.splice(idx, 1)
+    loadNotifications()
+  }, [loadNotifications])
+  useRealtime('notifications', () => loadNotifications())
+
+  const markAsRead = useCallback(async (id: string) => {
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
+    try {
+      await markNotificationRead(id)
+    } catch {
+      /* intentionally ignored */
     }
   }, [])
 
-  const markAsRead = useCallback((id: string) => {
-    globalNotifications = globalNotifications.map((n) => (n.id === id ? { ...n, read: true } : n))
-    emit()
-  }, [])
-
-  const markAllAsRead = useCallback(() => {
-    globalNotifications = globalNotifications.map((n) => ({ ...n, read: true }))
-    emit()
-  }, [])
-
-  const addNotification = useCallback((n: Omit<AppNotification, 'id' | 'timestamp' | 'read'>) => {
-    const newNotif: AppNotification = {
-      ...n,
-      id: `n-${Date.now()}`,
-      timestamp: 'agora',
-      read: false,
+  const markAllAsRead = useCallback(async () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
+    try {
+      await markAllNotificationsRead()
+    } catch {
+      /* intentionally ignored */
     }
-    globalNotifications = [newNotif, ...globalNotifications]
-    emit()
   }, [])
 
   const unreadCount = notifications.filter((n) => !n.read).length
 
-  return { notifications, unreadCount, markAsRead, markAllAsRead, addNotification }
+  return { notifications, unreadCount, markAsRead, markAllAsRead, loading }
 }
 
 export default useNotificationsStore

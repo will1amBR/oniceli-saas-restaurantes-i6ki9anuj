@@ -1,9 +1,11 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Sparkles, Send, X, Bot } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
-import { chatResponses, defaultChatResponse } from '@/lib/ai-data'
+import { chatWithAssistant } from '@/services/ai-agents'
+import { useAuth } from '@/hooks/use-auth'
+import pb from '@/lib/pocketbase/client'
 
 interface ChatMessage {
   role: 'user' | 'assistant'
@@ -17,65 +19,52 @@ const suggestedQuestions = [
   'Quanto vou faturar nesta semana?',
 ]
 
-function getResponse(question: string): string {
-  const normalized = question.toLowerCase().trim()
-  for (const [key, value] of Object.entries(chatResponses)) {
-    if (normalized.includes(key) || key.includes(normalized)) {
-      return value
-    }
-  }
-  if (normalized.includes('comprar') || normalized.includes('compra')) {
-    return chatResponses['quanto devo comprar amanha']
-  }
-  if (normalized.includes('desperdic') || normalized.includes('desperdício')) {
-    return chatResponses['qual ingrediente gera maior desperdicio']
-  }
-  if (normalized.includes('margem') || normalized.includes('lucro')) {
-    return chatResponses['qual prato possui maior margem']
-  }
-  if (
-    normalized.includes('faturar') ||
-    normalized.includes('faturamento') ||
-    normalized.includes('semana')
-  ) {
-    return chatResponses['quanto vou faturar nesta semana']
-  }
-  return defaultChatResponse
-}
+const fallbackResponse =
+  'Não consegui conectar ao assistente IA. Verifique sua conexão e tente novamente.'
 
 export function AiChat() {
+  const { isAuthenticated } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
       content:
-        'Olá! Sou o assistente Oniceli AI. Posso analisar seu estoque, finanças e operação em tempo real. Como posso ajudar?',
+        'Olá! Sou o Oniceli AI. Posso analisar seu estoque, finanças e operação. Como posso ajudar?',
     },
   ])
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
+  const [conversationId, setConversationId] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-    }
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
   }, [messages, isTyping])
 
-  const handleSend = (text: string) => {
-    const trimmed = text.trim()
-    if (!trimmed) return
+  const handleSend = useCallback(
+    async (text: string) => {
+      const trimmed = text.trim()
+      if (!trimmed || !isAuthenticated) return
+      setMessages((prev) => [...prev, { role: 'user', content: trimmed }])
+      setInput('')
+      setIsTyping(true)
+      try {
+        const result = await chatWithAssistant(trimmed, conversationId)
+        if (result.conversation_id) setConversationId(result.conversation_id)
+        setMessages((prev) => [
+          ...prev,
+          { role: 'assistant', content: result.content || fallbackResponse },
+        ])
+      } catch {
+        setMessages((prev) => [...prev, { role: 'assistant', content: fallbackResponse }])
+      } finally {
+        setIsTyping(false)
+      }
+    },
+    [conversationId, isAuthenticated],
+  )
 
-    setMessages((prev) => [...prev, { role: 'user', content: trimmed }])
-    setInput('')
-    setIsTyping(true)
-
-    setTimeout(() => {
-      const response = getResponse(trimmed)
-      setMessages((prev) => [...prev, { role: 'assistant', content: response }])
-      setIsTyping(false)
-    }, 800)
-  }
+  if (!isAuthenticated) return null
 
   return (
     <>
@@ -110,7 +99,7 @@ export function AiChat() {
                   <h3 className="font-semibold text-sm">Oniceli AI Assistant</h3>
                   <p className="text-[10px] text-emerald-100 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
-                    Online · Analisando dados em tempo real
+                    Online
                   </p>
                 </div>
               </div>
@@ -123,7 +112,6 @@ export function AiChat() {
                 <X className="h-5 w-5" />
               </Button>
             </div>
-
             <ScrollArea className="flex-1 p-4" ref={scrollRef}>
               <div className="space-y-4">
                 {messages.map((msg, i) => (
@@ -131,7 +119,7 @@ export function AiChat() {
                     key={i}
                     className={cn(
                       'flex gap-2 max-w-[90%]',
-                      msg.role === 'user' ? 'ml-auto flex-row-reverse' : '',
+                      msg.role === 'user' && 'ml-auto flex-row-reverse',
                     )}
                   >
                     {msg.role === 'assistant' && (
@@ -157,24 +145,18 @@ export function AiChat() {
                       <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
                     </div>
                     <div className="rounded-xl bg-muted px-4 py-3 flex gap-1">
-                      <span
-                        className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce"
-                        style={{ animationDelay: '0ms' }}
-                      />
-                      <span
-                        className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce"
-                        style={{ animationDelay: '150ms' }}
-                      />
-                      <span
-                        className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce"
-                        style={{ animationDelay: '300ms' }}
-                      />
+                      {[0, 150, 300].map((delay) => (
+                        <span
+                          key={delay}
+                          className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce"
+                          style={{ animationDelay: `${delay}ms` }}
+                        />
+                      ))}
                     </div>
                   </div>
                 )}
               </div>
             </ScrollArea>
-
             {messages.length <= 1 && (
               <div className="px-4 pb-2 flex flex-wrap gap-1.5">
                 {suggestedQuestions.map((q) => (
@@ -188,7 +170,6 @@ export function AiChat() {
                 ))}
               </div>
             )}
-
             <div className="p-3 border-t flex gap-2">
               <input
                 value={input}
