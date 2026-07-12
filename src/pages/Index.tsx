@@ -2,7 +2,9 @@ import { Sparkles, AlertTriangle, PackageX, Gauge } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { KPICard } from '@/components/kpi-card'
-import { mockKPIs, mockAlerts, mockAIInsights, mockChartData } from '@/lib/data'
+import { AiAgentsPanel } from '@/components/ai-agents-panel'
+import { AiFinancialPanel } from '@/components/ai-financial-panel'
+import { mockKPIs, mockAlerts, mockChartData } from '@/lib/data'
 import {
   Area,
   AreaChart,
@@ -91,6 +93,8 @@ export default function Index() {
         </Card>
       </div>
 
+      <AiAgentsPanel />
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="lg:col-span-4 hover:shadow-md transition-shadow">
           <CardHeader>
@@ -159,24 +163,38 @@ export default function Index() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 relative z-10">
-              {mockAIInsights.map((insight) => (
-                <div
-                  key={insight.id}
-                  className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-emerald-100 dark:border-emerald-900/50 shadow-sm"
-                >
-                  <h4 className="text-sm font-semibold flex justify-between items-center gap-2 text-slate-800 dark:text-slate-200">
-                    <span className="truncate">{insight.title}</span>
-                    <Badge
-                      variant="secondary"
-                      className="bg-emerald-100 text-emerald-800 hover:bg-emerald-200 text-[10px] shrink-0"
-                    >
-                      {insight.type === 'buy' ? 'Previsão' : 'Ação'}
-                    </Badge>
-                  </h4>
-                  <p className="text-xs text-muted-foreground mt-1">{insight.description}</p>
-                  <p className="text-xs font-medium text-emerald-600 mt-2">{insight.savings}</p>
-                </div>
-              ))}
+              <div className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-emerald-100 dark:border-emerald-900/50 shadow-sm">
+                <h4 className="text-sm font-semibold flex justify-between items-center gap-2 text-slate-800 dark:text-slate-200">
+                  <span className="truncate">Sugestão de Compra</span>
+                  <Badge
+                    variant="secondary"
+                    className="bg-emerald-100 text-emerald-800 hover:bg-emerald-200 text-[10px] shrink-0"
+                  >
+                    Previsão
+                  </Badge>
+                </h4>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Previsto aumento de 15% no preço do Tomate. Sugerido comprar 20kg.
+                </p>
+                <p className="text-xs font-medium text-emerald-600 mt-2">Economia est. R$ 45,00</p>
+              </div>
+              <div className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-emerald-100 dark:border-emerald-900/50 shadow-sm">
+                <h4 className="text-sm font-semibold flex justify-between items-center gap-2 text-slate-800 dark:text-slate-200">
+                  <span className="truncate">Otimização de Desperdício</span>
+                  <Badge
+                    variant="secondary"
+                    className="bg-emerald-100 text-emerald-800 hover:bg-emerald-200 text-[10px] shrink-0"
+                  >
+                    Ação
+                  </Badge>
+                </h4>
+                <p className="text-xs text-muted-foreground mt-1">
+                  5kg de Morango próximos ao vencimento. Sugestão: Promoção "Torta de Morango".
+                </p>
+                <p className="text-xs font-medium text-emerald-600 mt-2">
+                  Recuperação est. R$ 120,00
+                </p>
+              </div>
             </CardContent>
           </Card>
 
@@ -215,6 +233,8 @@ export default function Index() {
           </Card>
         </div>
       </div>
+
+      <AiFinancialPanel />
     </div>
   )
 }

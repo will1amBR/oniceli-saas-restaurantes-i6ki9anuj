@@ -1,4 +1,4 @@
-import { Bell, Search, User, Store, Truck } from 'lucide-react'
+import { Search, User, Store, Truck } from 'lucide-react'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useRole } from '@/contexts/role-context'
+import { NotificationCenter } from '@/components/notification-center'
 
 export function Header() {
   const { role, toggleRole } = useRole()
@@ -38,18 +39,11 @@ export function Header() {
           </span>
         </Button>
 
-        <span className="hidden lg:inline-flex text-sm font-medium text-muted-foreground">
+        <span className="hidden lg:inline-flex text-sm font-medium text-muted-foreground truncate">
           Restaurante La Bella
         </span>
 
-        <Button variant="ghost" size="icon" className="relative shrink-0">
-          <Bell className="h-5 w-5" />
-          <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-          </span>
-          <span className="sr-only">Notificações</span>
-        </Button>
+        <NotificationCenter />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

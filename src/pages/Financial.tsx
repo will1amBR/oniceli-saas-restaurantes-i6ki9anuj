@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { DollarSign, Trash2, PieChart } from 'lucide-react'
+import { AiFinancialPanel } from '@/components/ai-financial-panel'
 
 export default function Financial() {
   return (
@@ -10,6 +11,8 @@ export default function Financial() {
           DRE gerencial, acompanhamento de custos e desperdícios.
         </p>
       </div>
+
+      <AiFinancialPanel />
 
       <div className="grid gap-4 md:gap-6 md:grid-cols-3">
         <Card className="md:col-span-2">

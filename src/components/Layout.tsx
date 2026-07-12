@@ -3,6 +3,7 @@ import { SidebarProvider } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/app-sidebar'
 import { Header } from '@/components/header'
 import { BottomNav } from '@/components/bottom-nav'
+import { AiChat } from '@/components/ai-chat'
 
 export default function Layout() {
   return (
@@ -17,6 +18,7 @@ export default function Layout() {
         </div>
       </div>
       <BottomNav />
+      <AiChat />
     </SidebarProvider>
   )
 }
