@@ -10,7 +10,7 @@ export function LandingHero() {
       <div className="container relative mx-auto px-4 py-20 md:py-32 max-w-6xl">
         <div className="text-center space-y-6">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-            Gerencie seu negocio com
+            Gerencie seu negócio com
             <span className="block text-emerald-600 dark:text-emerald-400">
               precisão e inteligência
             </span>
