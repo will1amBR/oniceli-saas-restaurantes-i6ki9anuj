@@ -15,8 +15,8 @@ export function LandingCTA() {
             de lucro com o Oniceli.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
-            <Button asChild size="lg" variant="secondary" className="gap-2">
-              <Link to="/dashboard">
+            <Button asChild size="lg" variant="secondary" className="gap-2 min-h-[48px]">
+              <Link to="/onboarding?role=restaurant">
                 Criar Conta Grátis <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
@@ -24,10 +24,10 @@ export function LandingCTA() {
               asChild
               size="lg"
               variant="outline"
-              className="bg-transparent text-white border-white hover:bg-white/10 gap-2"
+              className="bg-transparent text-white border-white hover:bg-white/10 gap-2 min-h-[48px]"
             >
-              <Link to="/dashboard">
-                <ChefHat className="h-4 w-4" /> Explorar Dashboard
+              <Link to="/login">
+                <ChefHat className="h-4 w-4" /> Entrar
               </Link>
             </Button>
           </div>

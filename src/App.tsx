@@ -4,7 +4,11 @@ import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { RoleProvider } from '@/contexts/role-context'
+import { AuthProvider } from '@/hooks/use-auth'
+import { ProtectedRoute } from '@/components/protected-route'
 import Landing from './pages/Landing'
+import Login from './pages/Login'
+import Onboarding from './pages/Onboarding'
 import Index from './pages/Index'
 import Inventory from './pages/Inventory'
 import Recipes from './pages/Recipes'
@@ -27,27 +31,37 @@ function PWARegister() {
 
 const App = () => (
   <BrowserRouter>
-    <RoleProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <PWARegister />
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route element={<Layout />}>
-            <Route path="/dashboard" element={<Index />} />
-            <Route path="/estoque" element={<Inventory />} />
-            <Route path="/receitas" element={<Recipes />} />
-            <Route path="/vendas" element={<Sales />} />
-            <Route path="/compras" element={<Purchases />} />
-            <Route path="/fornecedores" element={<Suppliers />} />
-            <Route path="/financeiro" element={<Financial />} />
-            <Route path="/configuracoes" element={<Settings />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </TooltipProvider>
-    </RoleProvider>
+    <AuthProvider>
+      <RoleProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <PWARegister />
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/dashboard" element={<Index />} />
+              <Route path="/estoque" element={<Inventory />} />
+              <Route path="/receitas" element={<Recipes />} />
+              <Route path="/vendas" element={<Sales />} />
+              <Route path="/compras" element={<Purchases />} />
+              <Route path="/fornecedores" element={<Suppliers />} />
+              <Route path="/financeiro" element={<Financial />} />
+              <Route path="/configuracoes" element={<Settings />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </TooltipProvider>
+      </RoleProvider>
+    </AuthProvider>
   </BrowserRouter>
 )
 

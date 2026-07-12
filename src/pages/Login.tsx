@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ChefHat, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/hooks/use-auth'
 import { getErrorMessage } from '@/lib/pocketbase/errors'
+import { persistOnboardingData } from '@/services/onboarding'
+import pb from '@/lib/pocketbase/client'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -18,20 +20,28 @@ export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  if (isAuthenticated) {
-    navigate('/dashboard')
-  }
+  useEffect(() => {
+    if (isAuthenticated) {
+      const run = async () => {
+        try {
+          await persistOnboardingData(pb.authStore.record?.id || '')
+        } catch {
+          /* ignore persistence errors */
+        }
+        navigate('/dashboard')
+      }
+      run()
+    }
+  }, [isAuthenticated, navigate])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
     const result = isSignUp ? await signUp(email, password, name) : await signIn(email, password)
-    setLoading(false)
     if (result.error) {
       setError(getErrorMessage(result.error))
-    } else {
-      navigate('/dashboard')
+      setLoading(false)
     }
   }
 
@@ -59,6 +69,7 @@ export default function Login() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Seu nome"
+                  className="min-h-[44px]"
                 />
               </div>
             )}
@@ -71,6 +82,7 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="voce@email.com"
                 required
+                className="min-h-[44px]"
               />
             </div>
             <div className="space-y-2">
@@ -82,12 +94,13 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
+                className="min-h-[44px]"
               />
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
             <Button
               type="submit"
-              className="w-full bg-emerald-600 hover:bg-emerald-700"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 min-h-[44px]"
               disabled={loading}
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

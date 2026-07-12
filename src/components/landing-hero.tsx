@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Sparkles, ChefHat, ArrowRight } from 'lucide-react'
+import { Sparkles, Store, Truck } from 'lucide-react'
 
 export function LandingHero() {
   return (
@@ -27,17 +27,25 @@ export function LandingHero() {
             <Button
               asChild
               size="lg"
-              className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 min-h-[48px]"
             >
-              <Link to="/dashboard">
-                Começar Agora <ArrowRight className="h-4 w-4" />
+              <Link to="/onboarding?role=restaurant">
+                <Store className="h-5 w-5" /> Sou um Restaurante
               </Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="gap-2">
-              <Link to="/dashboard">
-                <ChefHat className="h-4 w-4" /> Ver Dashboard
+            <Button asChild size="lg" variant="outline" className="gap-2 min-h-[48px]">
+              <Link to="/onboarding?role=supplier">
+                <Truck className="h-5 w-5" /> Sou um Fornecedor
               </Link>
             </Button>
+          </div>
+          <div className="pt-2">
+            <Link
+              to="/login"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              Já tem conta? Entrar
+            </Link>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 pt-8 text-sm text-muted-foreground">
             <span className="flex items-center gap-1.5">

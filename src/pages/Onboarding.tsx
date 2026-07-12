@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useAuth } from '@/hooks/use-auth'
+import { saveOnboardingData } from '@/services/onboarding'
 import { cn } from '@/lib/utils'
 
 const plans = [
@@ -39,20 +40,40 @@ const plans = [
   },
 ]
 
+const supplierCategories = [
+  'Peixes',
+  'Hortifruti',
+  'Laticínios',
+  'Grãos',
+  'Carnes',
+  'Bebidas',
+  'Padaria',
+  'Outros',
+]
+
 export default function Onboarding() {
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
   const role = params.get('role') || 'restaurant'
   const [step, setStep] = useState(1)
-  const [hasColdRoom, setHasColdRoom] = useState('')
-  const [ingredients, setIngredients] = useState('')
-  const [salesVolume, setSalesVolume] = useState('')
+  const [form, setForm] = useState<Record<string, string>>({})
 
-  const handleFinish = () => {
-    if (isAuthenticated) navigate('/dashboard')
-    else navigate('/login')
+  const setField = (key: string, value: string) => setForm((p) => ({ ...p, [key]: value }))
+  const toggleCategory = (cat: string) => {
+    const current = form.categories ? form.categories.split(',') : []
+    const next = current.includes(cat) ? current.filter((c) => c !== cat) : [...current, cat]
+    setField('categories', next.join(','))
   }
+  const handleFinish = () => {
+    saveOnboardingData({
+      role: role as 'restaurant' | 'supplier',
+      questionnaire: form,
+      plan: 'pro',
+    })
+    navigate(isAuthenticated ? '/dashboard' : '/login')
+  }
+  const isRestaurant = role === 'restaurant'
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white dark:from-emerald-950/20 dark:to-background py-8 px-4">
@@ -90,7 +111,7 @@ export default function Onboarding() {
                     key={opt.r}
                     onClick={() => navigate(`/onboarding?role=${opt.r}`)}
                     className={cn(
-                      'flex flex-col items-center gap-2 p-6 rounded-xl border-2 transition-all',
+                      'flex flex-col items-center gap-2 p-6 rounded-xl border-2 transition-all min-h-[88px] justify-center',
                       role === opt.r
                         ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20'
                         : 'border-border hover:border-emerald-400',
@@ -108,7 +129,7 @@ export default function Onboarding() {
               </div>
               <Button
                 onClick={() => setStep(2)}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 gap-2"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 gap-2 min-h-[44px]"
               >
                 Continuar <ArrowRight className="h-4 w-4" />
               </Button>
@@ -120,56 +141,140 @@ export default function Onboarding() {
           <Card className="animate-fade-in-up">
             <CardContent className="pt-6 space-y-6">
               <div className="text-center">
-                <h2 className="text-2xl font-bold">Conte sobre seu negócio</h2>
+                <h2 className="text-2xl font-bold">
+                  {isRestaurant ? 'Conte sobre seu restaurante' : 'Conte sobre sua empresa'}
+                </h2>
                 <p className="text-muted-foreground mt-1">Responda algumas perguntas rápidas</p>
               </div>
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Possui câmara fria?</Label>
-                  <div className="flex gap-2">
-                    {['Sim', 'Não'].map((v) => (
-                      <Button
-                        key={v}
-                        variant={hasColdRoom === v ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setHasColdRoom(v)}
-                        className={hasColdRoom === v ? 'bg-emerald-600' : ''}
-                      >
-                        {v}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="ing">Principais ingredientes utilizados</Label>
+                  <Label>{isRestaurant ? 'Nome do restaurante' : 'Nome da empresa'}</Label>
                   <Input
-                    id="ing"
-                    value={ingredients}
-                    onChange={(e) => setIngredients(e.target.value)}
-                    placeholder="Ex: Salmão, Arroz, Tomate..."
+                    value={form.name || ''}
+                    onChange={(e) => setField('name', e.target.value)}
+                    placeholder={
+                      isRestaurant ? 'Ex: La Bella Trattoria' : 'Ex: Distribuidora Alimentos Sul'
+                    }
+                    className="min-h-[44px]"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Volume médio de vendas mensais</Label>
-                  <Select value={salesVolume} onValueChange={setSalesVolume}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0-500">Até R$ 50.000</SelectItem>
-                      <SelectItem value="500-1000">R$ 50.001 - R$ 100.000</SelectItem>
-                      <SelectItem value="1000+">Acima de R$ 100.000</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {isRestaurant ? (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Possui câmara fria?</Label>
+                      <div className="flex gap-2">
+                        {['Sim', 'Não'].map((v) => (
+                          <Button
+                            key={v}
+                            variant={form.hasColdRoom === v ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setField('hasColdRoom', v)}
+                            className={cn(
+                              'min-h-[44px]',
+                              form.hasColdRoom === v && 'bg-emerald-600',
+                            )}
+                          >
+                            {v}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="ing">Principais ingredientes/insumos</Label>
+                      <Input
+                        id="ing"
+                        value={form.ingredients || ''}
+                        onChange={(e) => setField('ingredients', e.target.value)}
+                        placeholder="Ex: Salmão, Arroz, Tomate..."
+                        className="min-h-[44px]"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cap">Capacidade de armazenamento</Label>
+                      <Input
+                        id="cap"
+                        value={form.storageCapacity || ''}
+                        onChange={(e) => setField('storageCapacity', e.target.value)}
+                        placeholder="Ex: 500kg câmara fria, 1000kg estoque seco"
+                        className="min-h-[44px]"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Volume médio de vendas mensais</Label>
+                      <Select
+                        value={form.salesVolume || ''}
+                        onValueChange={(v) => setField('salesVolume', v)}
+                      >
+                        <SelectTrigger className="min-h-[44px]">
+                          <SelectValue placeholder="Selecione..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="0-500">Até R$ 50.000</SelectItem>
+                          <SelectItem value="500-1000">R$ 50.001 - R$ 100.000</SelectItem>
+                          <SelectItem value="1000+">Acima de R$ 100.000</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Categorias de produtos</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {supplierCategories.map((cat) => (
+                          <button
+                            key={cat}
+                            onClick={() => toggleCategory(cat)}
+                            className={cn(
+                              'px-3 py-2 rounded-full text-sm border transition-all min-h-[44px]',
+                              (form.categories || '').split(',').includes(cat)
+                                ? 'bg-emerald-600 text-white border-emerald-600'
+                                : 'border-border hover:border-emerald-400',
+                            )}
+                          >
+                            {cat}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="regions">Regiões de entrega</Label>
+                      <Input
+                        id="regions"
+                        value={form.deliveryRegions || ''}
+                        onChange={(e) => setField('deliveryRegions', e.target.value)}
+                        placeholder="Ex: Zona Sul, Centro, Grande SP"
+                        className="min-h-[44px]"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Prazo médio de entrega</Label>
+                      <Select
+                        value={form.deliveryLeadTime || ''}
+                        onValueChange={(v) => setField('deliveryLeadTime', v)}
+                      >
+                        <SelectTrigger className="min-h-[44px]">
+                          <SelectValue placeholder="Selecione..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1 dia</SelectItem>
+                          <SelectItem value="2">2 dias</SelectItem>
+                          <SelectItem value="3">3 dias</SelectItem>
+                          <SelectItem value="5">5 dias</SelectItem>
+                          <SelectItem value="7">7+ dias</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setStep(1)} className="gap-2">
+                <Button variant="outline" onClick={() => setStep(1)} className="gap-2 min-h-[44px]">
                   <ArrowLeft className="h-4 w-4" /> Voltar
                 </Button>
                 <Button
                   onClick={() => setStep(3)}
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 gap-2"
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 gap-2 min-h-[44px]"
                 >
                   Continuar <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -219,7 +324,7 @@ export default function Onboarding() {
                     <Button
                       onClick={handleFinish}
                       className={cn(
-                        'w-full mt-4',
+                        'w-full mt-4 min-h-[44px]',
                         plan.highlight ? 'bg-emerald-600 hover:bg-emerald-700' : '',
                       )}
                       variant={plan.highlight ? 'default' : 'outline'}
@@ -230,7 +335,11 @@ export default function Onboarding() {
                 </Card>
               ))}
             </div>
-            <Button variant="ghost" onClick={() => setStep(2)} className="w-full gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => setStep(2)}
+              className="w-full gap-2 min-h-[44px]"
+            >
               <ArrowLeft className="h-4 w-4" /> Voltar
             </Button>
           </div>
