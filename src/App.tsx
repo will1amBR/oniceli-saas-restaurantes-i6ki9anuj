@@ -17,6 +17,7 @@ import Purchases from './pages/Purchases'
 import Financial from './pages/Financial'
 import Suppliers from './pages/Suppliers'
 import Settings from './pages/Settings'
+import SupplierDashboard from './pages/SupplierDashboard'
 import NotFound from './pages/NotFound'
 import Layout from './components/Layout'
 
@@ -56,6 +57,7 @@ const App = () => (
               <Route path="/fornecedores" element={<Suppliers />} />
               <Route path="/financeiro" element={<Financial />} />
               <Route path="/configuracoes" element={<Settings />} />
+              <Route path="/supplier/dashboard" element={<SupplierDashboard />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

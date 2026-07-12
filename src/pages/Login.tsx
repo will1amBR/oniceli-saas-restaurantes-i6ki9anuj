@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ChefHat, Loader2 } from 'lucide-react'
+import { ChefHat, Loader2, Store, Truck } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,7 +12,7 @@ import pb from '@/lib/pocketbase/client'
 
 export default function Login() {
   const navigate = useNavigate()
-  const { signIn, signUp, isAuthenticated } = useAuth()
+  const { signIn, signUp, isAuthenticated, user } = useAuth()
   const [isSignUp, setIsSignUp] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -23,8 +23,8 @@ export default function Login() {
   useEffect(() => {
     if (isAuthenticated) {
       const run = async () => {
-        const user = pb.authStore.record
-        const userRole = (user as any)?.role
+        const currentUser = pb.authStore.record
+        const userRole = (currentUser as any)?.role
         if (!userRole) {
           navigate('/onboarding')
           return
@@ -32,12 +32,12 @@ export default function Login() {
         const onboardingData = getOnboardingData()
         if (onboardingData) {
           try {
-            await persistOnboardingData(user?.id || '')
+            await persistOnboardingData(currentUser?.id || '')
           } catch {
-            /* ignore persistence errors */
+            /* ignore */
           }
         }
-        navigate('/dashboard')
+        navigate(userRole === 'supplier' ? '/supplier/dashboard' : '/dashboard')
       }
       run()
     }
@@ -48,6 +48,18 @@ export default function Login() {
     setError('')
     setLoading(true)
     const result = isSignUp ? await signUp(email, password, name) : await signIn(email, password)
+    if (result.error) {
+      setError(getErrorMessage(result.error))
+      setLoading(false)
+    }
+  }
+
+  const demoLogin = async (demoEmail: string) => {
+    setError('')
+    setLoading(true)
+    setEmail(demoEmail)
+    setPassword('Skip@Pass')
+    const result = await signIn(demoEmail, 'Skip@Pass')
     if (result.error) {
       setError(getErrorMessage(result.error))
       setLoading(false)
@@ -127,6 +139,31 @@ export default function Login() {
               {isSignUp ? 'Já tem conta? Entrar' : 'Não tem conta? Cadastrar'}
             </button>
           </div>
+          {!isSignUp && (
+            <div className="mt-4 pt-4 border-t">
+              <p className="text-xs text-center text-muted-foreground mb-3">Acesso demo rápido:</p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => demoLogin('restaurante@demo.oniceli.com')}
+                  disabled={loading}
+                  className="gap-1.5"
+                >
+                  <Store className="h-3.5 w-3.5" /> Restaurante
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => demoLogin('fornecedor@demo.oniceli.com')}
+                  disabled={loading}
+                  className="gap-1.5"
+                >
+                  <Truck className="h-3.5 w-3.5" /> Fornecedor
+                </Button>
+              </div>
+            </div>
+          )}
           <div className="mt-2 text-center">
             <Link to="/" className="text-xs text-muted-foreground hover:underline">
               ← Voltar ao início

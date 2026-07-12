@@ -12,6 +12,7 @@ export interface InventoryItem {
   expiry_date: string
   supplier_id: string
   status: string
+  user_id: string
   expand?: { supplier_id?: any }
 }
 

@@ -1,4 +1,5 @@
 import { Search, User, Store, Truck } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -11,10 +12,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useRole } from '@/contexts/role-context'
+import { useAuth } from '@/hooks/use-auth'
 import { NotificationCenter } from '@/components/notification-center'
 
 export function Header() {
   const { role, toggleRole } = useRole()
+  const { user, signOut } = useAuth()
+  const navigate = useNavigate()
 
   return (
     <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 md:gap-4 border-b bg-background px-4 md:px-6 shadow-sm">
@@ -40,7 +44,7 @@ export function Header() {
         </Button>
 
         <span className="hidden lg:inline-flex text-sm font-medium text-muted-foreground truncate">
-          Restaurante La Bella
+          {user?.name || 'Usuário'}
         </span>
 
         <NotificationCenter />
@@ -59,7 +63,15 @@ export function Header() {
             <DropdownMenuItem>Trocar Restaurante</DropdownMenuItem>
             <DropdownMenuItem>Suporte</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-600">Sair</DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-red-600"
+              onClick={() => {
+                signOut()
+                navigate('/login')
+              }}
+            >
+              Sair
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

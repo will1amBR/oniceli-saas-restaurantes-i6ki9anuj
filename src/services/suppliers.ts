@@ -11,6 +11,7 @@ export interface Supplier {
   delivery_lead_time: number
   rating: number
   status: string
+  user_id: string
 }
 
 export const getSuppliers = () =>

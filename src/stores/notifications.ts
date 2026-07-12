@@ -1,65 +1,86 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import pb from '@/lib/pocketbase/client'
 import {
   getNotifications,
   markNotificationRead,
   markAllNotificationsRead,
   formatTimestamp,
 } from '@/services/notifications'
-import { useRealtime } from '@/hooks/use-realtime'
-import type { AppNotification } from '@/lib/ai-data'
+
+export interface NotificationItem {
+  id: string
+  type: string
+  title: string
+  message: string
+  priority: string
+  channel: string
+  read: boolean
+  timestamp: string
+}
+
+type State = { notifications: NotificationItem[]; unreadCount: number }
+
+let currentState: State = { notifications: [], unreadCount: 0 }
+const listeners = new Set<() => void>()
+let unsub: (() => Promise<void>) | null = null
+
+function setState(s: State) {
+  currentState = s
+  listeners.forEach((l) => l())
+}
+
+async function reload() {
+  try {
+    const records = await getNotifications()
+    setState({
+      notifications: records.map((n) => ({
+        id: n.id,
+        type: n.type,
+        title: n.title,
+        message: n.message,
+        priority: n.priority,
+        channel: n.channel,
+        read: n.read,
+        timestamp: formatTimestamp(n.created),
+      })),
+      unreadCount: records.filter((n) => !n.read).length,
+    })
+  } catch {
+    /* ignore */
+  }
+}
 
 export function useNotificationsStore() {
-  const [notifications, setNotifications] = useState<AppNotification[]>([])
-  const [loading, setLoading] = useState(true)
+  const [, forceUpdate] = useState({})
 
-  const loadNotifications = useCallback(async () => {
-    try {
-      const records = await getNotifications()
-      setNotifications(
-        records.map((r) => ({
-          id: r.id,
-          type: r.type as any,
-          channel: r.channel as any,
-          title: r.title,
-          message: r.message,
-          priority: r.priority as any,
-          timestamp: formatTimestamp(r.created),
-          read: r.read,
-        })),
-      )
-    } catch {
-      setNotifications([])
-    } finally {
-      setLoading(false)
+  useEffect(() => {
+    const listener = () => forceUpdate({})
+    listeners.add(listener)
+    reload()
+
+    if (!unsub) {
+      pb.collection('notifications')
+        .subscribe('*', () => reload())
+        .then((fn) => {
+          unsub = fn
+        })
+        .catch(() => {})
+    }
+
+    return () => {
+      listeners.delete(listener)
     }
   }, [])
 
-  useEffect(() => {
-    loadNotifications()
-  }, [loadNotifications])
-  useRealtime('notifications', () => loadNotifications())
-
   const markAsRead = useCallback(async (id: string) => {
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
-    try {
-      await markNotificationRead(id)
-    } catch {
-      /* intentionally ignored */
-    }
+    await markNotificationRead(id)
+    await reload()
   }, [])
 
   const markAllAsRead = useCallback(async () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
-    try {
-      await markAllNotificationsRead()
-    } catch {
-      /* intentionally ignored */
-    }
+    await markAllNotificationsRead()
+    await reload()
   }, [])
 
-  const unreadCount = notifications.filter((n) => !n.read).length
-
-  return { notifications, unreadCount, markAsRead, markAllAsRead, loading }
+  return { ...currentState, markAsRead, markAllAsRead, reload }
 }
-
-export default useNotificationsStore

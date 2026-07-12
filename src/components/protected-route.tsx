@@ -2,8 +2,13 @@ import { Navigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 
-export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, loading } = useAuth()
+interface ProtectedRouteProps {
+  children: React.ReactNode
+  requiredRole?: 'restaurant' | 'supplier'
+}
+
+export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
+  const { isAuthenticated, user, loading } = useAuth()
 
   if (loading) {
     return (
@@ -15,6 +20,11 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
+  }
+
+  if (requiredRole && user?.role !== requiredRole) {
+    const target = user?.role === 'supplier' ? '/supplier/dashboard' : '/dashboard'
+    return <Navigate to={target} replace />
   }
 
   return <>{children}</>

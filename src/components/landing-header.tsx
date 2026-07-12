@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
 
 const NAV_LINKS = [
+  { label: 'Início', href: '#inicio' },
   { label: 'Funcionalidades', href: '#funcionalidades' },
   { label: 'Planos', href: '#planos' },
-  { label: 'Sobre', href: '#sobre' },
 ]
 
 export function LandingHeader() {

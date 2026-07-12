@@ -9,6 +9,7 @@ export interface MenuItem {
   ingredients: string
   category: string
   active: boolean
+  user_id: string
 }
 
 export const getMenuItems = () =>

@@ -4,7 +4,10 @@ import { Sparkles, Store, Truck } from 'lucide-react'
 
 export function LandingHero() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-emerald-50 via-white to-white dark:from-emerald-950/20 dark:via-background dark:to-background">
+    <section
+      id="inicio"
+      className="relative overflow-hidden bg-gradient-to-b from-emerald-50 via-white to-white dark:from-emerald-950/20 dark:via-background dark:to-background"
+    >
       <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl -mr-20 -mt-20" />
       <div className="absolute bottom-0 left-0 w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl -ml-20 -mb-20" />
       <div className="container relative mx-auto px-4 py-20 md:py-32 max-w-6xl">
