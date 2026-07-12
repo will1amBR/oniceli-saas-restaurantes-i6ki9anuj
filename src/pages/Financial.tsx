@@ -5,20 +5,20 @@ export default function Financial() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Análise Financeira</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Análise Financeira</h1>
         <p className="text-muted-foreground mt-1">
           DRE gerencial, acompanhamento de custos e desperdícios.
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="col-span-2">
+      <div className="grid gap-4 md:gap-6 md:grid-cols-3">
+        <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle>Resumo de Custos (Mês Atual)</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="flex items-center justify-between p-3 md:p-4 border rounded-lg gap-3">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-emerald-100 rounded-full text-emerald-600">
                     <DollarSign className="h-5 w-5" />
@@ -36,7 +36,7 @@ export default function Financial() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-4 border rounded-lg bg-red-50/50 dark:bg-red-950/20">
+              <div className="flex items-center justify-between p-3 md:p-4 border rounded-lg bg-red-50/50 dark:bg-red-950/20 gap-3">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-red-100 rounded-full text-red-600">
                     <Trash2 className="h-5 w-5" />

@@ -1,4 +1,4 @@
-import { Bell, Search, User } from 'lucide-react'
+import { Bell, Search, User, Store, Truck } from 'lucide-react'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -10,16 +10,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Badge } from '@/components/ui/badge'
+import { useRole } from '@/contexts/role-context'
 
 export function Header() {
-  return (
-    <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-4 border-b bg-background px-4 md:px-6 shadow-sm">
-      <SidebarTrigger className="-ml-2" />
+  const { role, toggleRole } = useRole()
 
-      <div className="flex-1 flex items-center">
+  return (
+    <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 md:gap-4 border-b bg-background px-4 md:px-6 shadow-sm">
+      <SidebarTrigger className="-ml-2 shrink-0" />
+
+      <div className="flex-1 flex items-center min-w-0">
         <div className="w-full max-w-sm relative hidden sm:flex">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground shrink-0" />
           <Input
             type="search"
             placeholder="Buscar no estoque, receitas..."
@@ -28,12 +30,19 @@ export function Header() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 md:gap-4">
-        <span className="hidden md:inline-flex text-sm font-medium text-muted-foreground mr-2">
+      <div className="flex items-center gap-1 md:gap-3 shrink-0">
+        <Button variant="outline" size="sm" onClick={toggleRole} className="hidden md:flex gap-2">
+          {role === 'restaurant' ? <Store className="h-4 w-4" /> : <Truck className="h-4 w-4" />}
+          <span className="text-xs font-medium">
+            {role === 'restaurant' ? 'Restaurante' : 'Fornecedor'}
+          </span>
+        </Button>
+
+        <span className="hidden lg:inline-flex text-sm font-medium text-muted-foreground">
           Restaurante La Bella
         </span>
 
-        <Button variant="ghost" size="icon" className="relative">
+        <Button variant="ghost" size="icon" className="relative shrink-0">
           <Bell className="h-5 w-5" />
           <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -44,7 +53,7 @@ export function Header() {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full bg-muted border">
+            <Button variant="ghost" size="icon" className="rounded-full bg-muted border shrink-0">
               <User className="h-5 w-5" />
               <span className="sr-only">Menu do usuário</span>
             </Button>

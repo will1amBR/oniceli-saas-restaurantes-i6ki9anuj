@@ -31,7 +31,7 @@ export default function Purchases() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Compras e Fornecedores</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Compras e Fornecedores</h1>
           <p className="text-muted-foreground mt-1">
             Conecte-se com o marketplace e acompanhe pedidos.
           </p>
@@ -43,45 +43,47 @@ export default function Purchases() {
 
       <div className="grid gap-6 md:grid-cols-3">
         <Card className="md:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between pb-4">
+          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4">
             <div>
               <CardTitle>Histórico de Pedidos</CardTitle>
               <CardDescription>Acompanhe o status de entrega e valores pagos.</CardDescription>
             </div>
-            <div className="relative w-64">
+            <div className="relative w-full sm:w-64">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Buscar por fornecedor..." className="pl-8" />
             </div>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Pedido</TableHead>
-                  <TableHead>Fornecedor</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {mockPurchases.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-medium text-emerald-700">{order.id}</TableCell>
-                    <TableCell>{order.supplier}</TableCell>
-                    <TableCell className="text-muted-foreground">{order.date}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className={getStatusColor(order.status)}>
-                        {order.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-mono font-medium">
-                      R$ {order.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Pedido</TableHead>
+                    <TableHead>Fornecedor</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {mockPurchases.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell className="font-medium text-emerald-700">{order.id}</TableCell>
+                      <TableCell>{order.supplier}</TableCell>
+                      <TableCell className="text-muted-foreground">{order.date}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className={getStatusColor(order.status)}>
+                          {order.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-mono font-medium">
+                        R$ {order.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
 

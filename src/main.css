@@ -96,6 +96,9 @@
 }
 
 @layer utilities {
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
   .animate-accordion-down {
     animation: accordion-down 0.2s ease-out;
   }

@@ -9,6 +9,7 @@ import {
   Settings,
   PlusCircle,
   ChefHat,
+  Truck,
 } from 'lucide-react'
 
 import {
@@ -26,11 +27,12 @@ import {
 import { Button } from '@/components/ui/button'
 
 const mainNav = [
-  { title: 'Dashboard', url: '/', icon: LayoutDashboard },
+  { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Estoque', url: '/estoque', icon: Package },
   { title: 'Receitas', url: '/receitas', icon: UtensilsCrossed },
   { title: 'Vendas', url: '/vendas', icon: TrendingUp },
   { title: 'Compras', url: '/compras', icon: ShoppingCart },
+  { title: 'Fornecedores', url: '/fornecedores', icon: Truck },
   { title: 'Financeiro', url: '/financeiro', icon: LineChart },
 ]
 
@@ -40,7 +42,10 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="h-16 flex items-center justify-center border-b px-6 py-4">
-        <Link to="/" className="flex items-center gap-2 font-bold text-xl text-primary w-full">
+        <Link
+          to="/dashboard"
+          className="flex items-center gap-2 font-bold text-xl text-primary w-full"
+        >
           <ChefHat className="h-6 w-6 text-primary" />
           <span>Oniceli</span>
         </Link>

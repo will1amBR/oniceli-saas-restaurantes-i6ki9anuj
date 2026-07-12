@@ -15,9 +15,11 @@ import { Progress } from '@/components/ui/progress'
 export default function Recipes() {
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Fichas Técnicas (Receitas)</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+            Fichas Técnicas (Receitas)
+          </h1>
           <p className="text-muted-foreground mt-1">
             Padronize pratos e calcule custos exatos por porção.
           </p>

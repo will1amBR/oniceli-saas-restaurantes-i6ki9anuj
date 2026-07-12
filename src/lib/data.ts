@@ -1,8 +1,12 @@
 export const mockKPIs = {
   estoqueDisponivel: 45230.5,
-  cmvAtual: 28.5, // %
-  margemLucro: 18.2, // %
+  cmvAtual: 28.5,
+  margemLucro: 18.2,
   ticketMedio: 85.4,
+  itensCriticos: 3,
+  itensProximosVencimento: 5,
+  desperdicioEstimado: 845.3,
+  scoreOperacional: 87,
 }
 
 export const mockAlerts = [
@@ -20,6 +24,13 @@ export const mockAlerts = [
     message: '12 litros vencem em 2 dias.',
     date: 'Ontem, 18:45',
   },
+  {
+    id: 3,
+    type: 'warning',
+    title: 'Morango Fresco',
+    message: '5kg próximos ao vencimento.',
+    date: 'Hoje, 08:15',
+  },
 ]
 
 export const mockAIInsights = [
@@ -27,15 +38,14 @@ export const mockAIInsights = [
     id: 1,
     type: 'buy',
     title: 'Sugestão de Compra',
-    description: 'Previsto aumento de 15% no preço do Tomate Longa Vida. Sugerido comprar 20kg.',
+    description: 'Previsto aumento de 15% no preço do Tomate. Sugerido comprar 20kg.',
     savings: 'Economia est. R$ 45,00',
   },
   {
     id: 2,
     type: 'optimize',
     title: 'Otimização de Desperdício',
-    description:
-      '5kg de Morango próximos ao vencimento. Sugestão: Criar promoção de "Torta de Morango".',
+    description: '5kg de Morango próximos ao vencimento. Sugestão: Promoção "Torta de Morango".',
     savings: 'Recuperação est. R$ 120,00',
   },
 ]
@@ -61,6 +71,7 @@ export const mockInventory = [
     minQuantity: 5,
     cost: 85.0,
     status: 'critical',
+    expiry: '2 dias',
   },
   {
     id: '2',
@@ -72,6 +83,7 @@ export const mockInventory = [
     minQuantity: 10,
     cost: 6.5,
     status: 'healthy',
+    expiry: '8 dias',
   },
   {
     id: '3',
@@ -83,6 +95,7 @@ export const mockInventory = [
     minQuantity: 20,
     cost: 4.5,
     status: 'warning',
+    expiry: '2 dias',
   },
   {
     id: '4',
@@ -94,6 +107,7 @@ export const mockInventory = [
     minQuantity: 20,
     cost: 5.2,
     status: 'healthy',
+    expiry: '180 dias',
   },
   {
     id: '5',
@@ -105,6 +119,43 @@ export const mockInventory = [
     minQuantity: 15,
     cost: 12.0,
     status: 'healthy',
+    expiry: '120 dias',
+  },
+  {
+    id: '6',
+    name: 'Morango Fresco',
+    category: 'Hortifruti',
+    location: 'Geladeira',
+    unit: 'kg',
+    quantity: 5,
+    minQuantity: 3,
+    cost: 15.0,
+    status: 'warning',
+    expiry: '1 dia',
+  },
+  {
+    id: '7',
+    name: 'Queijo Parmesão',
+    category: 'Laticínios',
+    location: 'Geladeira',
+    unit: 'kg',
+    quantity: 0,
+    minQuantity: 2,
+    cost: 45.0,
+    status: 'critical',
+    expiry: 'Vencido',
+  },
+  {
+    id: '8',
+    name: 'Cebola',
+    category: 'Hortifruti',
+    location: 'Estoque Seco',
+    unit: 'kg',
+    quantity: 18,
+    minQuantity: 10,
+    cost: 3.5,
+    status: 'healthy',
+    expiry: '15 dias',
   },
 ]
 
@@ -159,5 +210,52 @@ export const mockPurchases = [
     date: '2023-10-28',
     total: 890.0,
     status: 'Em Trânsito',
+  },
+]
+
+export const mockSuppliers = [
+  {
+    id: '1',
+    name: 'Distribuidora Pescados Mar',
+    category: 'Peixes e Frutos do Mar',
+    leadTime: 2,
+    rating: 4.8,
+    products: ['Salmão', 'Camarão', 'Lula', 'Polvo'],
+    phone: '(11) 3456-7890',
+    email: 'contato@pescadosmar.com',
+    status: 'active',
+  },
+  {
+    id: '2',
+    name: 'Hortifruti Central',
+    category: 'Frutas e Verduras',
+    leadTime: 1,
+    rating: 4.5,
+    products: ['Tomate', 'Cebola', 'Alho', 'Morango', 'Verduras'],
+    phone: '(11) 2345-6789',
+    email: 'vendas@hortifruticentral.com',
+    status: 'active',
+  },
+  {
+    id: '3',
+    name: 'Laticínios Bom Campo',
+    category: 'Laticínios e Queijos',
+    leadTime: 3,
+    rating: 4.7,
+    products: ['Leite', 'Queijo', 'Manteiga', 'Creme de Leite'],
+    phone: '(11) 4567-8901',
+    email: 'pedidos@bomcampo.com',
+    status: 'active',
+  },
+  {
+    id: '4',
+    name: 'Distribuidora Grãos Sul',
+    category: 'Grãos e Cereais',
+    leadTime: 5,
+    rating: 4.3,
+    products: ['Arroz', 'Feijão', 'Farinha', 'Lentilha'],
+    phone: '(11) 5678-9012',
+    email: 'comercial@graosul.com',
+    status: 'inactive',
   },
 ]
