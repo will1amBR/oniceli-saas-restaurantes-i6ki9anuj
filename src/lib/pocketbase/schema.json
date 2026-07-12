@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-12T22:17:54.176Z",
+  "generatedAt": "2026-07-12T22:28:00.650Z",
   "collections": [
     {
       "name": "users",
@@ -37,6 +37,13 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "role",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["restaurant", "supplier"]
         }
       ],
       "indexes": [

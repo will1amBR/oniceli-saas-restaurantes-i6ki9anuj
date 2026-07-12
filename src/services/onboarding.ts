@@ -31,8 +31,9 @@ export async function persistOnboardingData(userId: string): Promise<void> {
   const data = getOnboardingData()
   if (!data || !userId) return
 
+  const q = data.questionnaire
+
   if (data.role === 'supplier') {
-    const q = data.questionnaire
     await createSupplier({
       name: q.name || 'Novo Fornecedor',
       categories: q.categories || '',
@@ -44,9 +45,15 @@ export async function persistOnboardingData(userId: string): Promise<void> {
       rating: 0,
       status: 'active',
     })
+    await pb.collection('users').update(userId, {
+      name: q.name || 'Novo Fornecedor',
+      role: 'supplier',
+    })
   } else {
-    const q = data.questionnaire
-    await pb.collection('users').update(userId, { name: q.name || 'Restaurante' })
+    await pb.collection('users').update(userId, {
+      name: q.name || 'Restaurante',
+      role: 'restaurant',
+    })
   }
 
   clearOnboardingData()

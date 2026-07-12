@@ -13,7 +13,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useAuth } from '@/hooks/use-auth'
-import { saveOnboardingData } from '@/services/onboarding'
+import { saveOnboardingData, persistOnboardingData } from '@/services/onboarding'
+import pb from '@/lib/pocketbase/client'
 import { cn } from '@/lib/utils'
 
 const plans = [
@@ -65,13 +66,22 @@ export default function Onboarding() {
     const next = current.includes(cat) ? current.filter((c) => c !== cat) : [...current, cat]
     setField('categories', next.join(','))
   }
-  const handleFinish = () => {
+  const handleFinish = async (planName: string) => {
     saveOnboardingData({
       role: role as 'restaurant' | 'supplier',
       questionnaire: form,
-      plan: 'pro',
+      plan: planName,
     })
-    navigate(isAuthenticated ? '/dashboard' : '/login')
+    if (isAuthenticated) {
+      try {
+        await persistOnboardingData(pb.authStore.record?.id || '')
+      } catch {
+        /* ignore persistence errors */
+      }
+      navigate('/dashboard')
+    } else {
+      navigate('/login')
+    }
   }
   const isRestaurant = role === 'restaurant'
 
@@ -322,7 +332,7 @@ export default function Onboarding() {
                       ))}
                     </ul>
                     <Button
-                      onClick={handleFinish}
+                      onClick={() => handleFinish(plan.name)}
                       className={cn(
                         'w-full mt-4 min-h-[44px]',
                         plan.highlight ? 'bg-emerald-600 hover:bg-emerald-700' : '',

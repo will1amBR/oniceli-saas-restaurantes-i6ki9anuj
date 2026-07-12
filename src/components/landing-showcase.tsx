@@ -6,7 +6,7 @@ const sections = [
     badge: 'Inteligência de Estoque',
     badgeClass: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400',
     title: 'Previsões que evitam rupturas',
-    desc: 'Nossa IA analisa consumo histórico, lead time de fornecedores e margens de segurança para prever quando cada item precisará reposição — antes que falte.',
+    desc: 'Nossa IA analisa consumo histórico, lead time de fornecedores e margens de segurança para prever quando cada item precisará reposição antes que falte.',
     img: 'https://img.usecurling.com/p/600/400?q=restaurant%20kitchen%20fresh%20ingredients',
     alt: 'Cozinha de restaurante com ingredientes frescos',
     reverse: false,

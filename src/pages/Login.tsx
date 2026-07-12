@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/hooks/use-auth'
 import { getErrorMessage } from '@/lib/pocketbase/errors'
-import { persistOnboardingData } from '@/services/onboarding'
+import { persistOnboardingData, getOnboardingData } from '@/services/onboarding'
 import pb from '@/lib/pocketbase/client'
 
 export default function Login() {
@@ -23,10 +23,19 @@ export default function Login() {
   useEffect(() => {
     if (isAuthenticated) {
       const run = async () => {
-        try {
-          await persistOnboardingData(pb.authStore.record?.id || '')
-        } catch {
-          /* ignore persistence errors */
+        const user = pb.authStore.record
+        const userRole = (user as any)?.role
+        if (!userRole) {
+          navigate('/onboarding')
+          return
+        }
+        const onboardingData = getOnboardingData()
+        if (onboardingData) {
+          try {
+            await persistOnboardingData(user?.id || '')
+          } catch {
+            /* ignore persistence errors */
+          }
         }
         navigate('/dashboard')
       }
