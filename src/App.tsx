@@ -18,6 +18,7 @@ import Financial from './pages/Financial'
 import Suppliers from './pages/Suppliers'
 import Settings from './pages/Settings'
 import SupplierDashboard from './pages/SupplierDashboard'
+import SupplierOrders from './pages/SupplierOrders'
 import NotFound from './pages/NotFound'
 import Layout from './components/Layout'
 
@@ -58,6 +59,7 @@ const App = () => (
               <Route path="/financeiro" element={<Financial />} />
               <Route path="/configuracoes" element={<Settings />} />
               <Route path="/supplier/dashboard" element={<SupplierDashboard />} />
+              <Route path="/supplier/pedidos" element={<SupplierOrders />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-12T23:40:44.779Z",
+  "generatedAt": "2026-07-12T23:52:00.837Z",
   "collections": [
     {
       "name": "users",
@@ -544,6 +544,71 @@
         }
       ],
       "indexes": ["CREATE INDEX idx_notifications_user ON notifications (user_id)"]
+    },
+    {
+      "name": "orders",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (restaurant_id = @request.auth.id || supplier_id.user_id = @request.auth.id)",
+        "view": "@request.auth.id != '' && (restaurant_id = @request.auth.id || supplier_id.user_id = @request.auth.id)",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "restaurant_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "supplier_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "suppliers"
+        },
+        {
+          "name": "items",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "total_amount",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["pending", "processing", "shipped", "delivered", "cancelled"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_orders_restaurant_id ON orders (restaurant_id)",
+        "CREATE INDEX idx_orders_supplier_id ON orders (supplier_id)",
+        "CREATE INDEX idx_orders_status ON orders (status)"
+      ]
     }
   ]
 }

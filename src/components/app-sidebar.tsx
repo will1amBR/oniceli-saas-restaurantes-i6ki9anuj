@@ -10,7 +10,9 @@ import {
   PlusCircle,
   ChefHat,
   Truck,
+  ClipboardList,
 } from 'lucide-react'
+import { useAuth } from '@/hooks/use-auth'
 
 import {
   Sidebar,
@@ -26,7 +28,7 @@ import {
 } from '@/components/ui/sidebar'
 import { Button } from '@/components/ui/button'
 
-const mainNav = [
+const restaurantNav = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Estoque', url: '/estoque', icon: Package },
   { title: 'Receitas', url: '/receitas', icon: UtensilsCrossed },
@@ -36,8 +38,16 @@ const mainNav = [
   { title: 'Financeiro', url: '/financeiro', icon: LineChart },
 ]
 
+const supplierNav = [
+  { title: 'Dashboard', url: '/supplier/dashboard', icon: LayoutDashboard },
+  { title: 'Pedidos', url: '/supplier/pedidos', icon: ClipboardList },
+]
+
 export function AppSidebar() {
   const location = useLocation()
+  const { user } = useAuth()
+  const isSupplier = user?.role === 'supplier'
+  const mainNav = isSupplier ? supplierNav : restaurantNav
 
   return (
     <Sidebar>
@@ -70,30 +80,35 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Administração</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={location.pathname === '/configuracoes'}>
-                  <Link to="/configuracoes">
-                    <Settings />
-                    <span>Configurações</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {!isSupplier && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Administração</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location.pathname === '/configuracoes'}>
+                    <Link to="/configuracoes">
+                      <Settings />
+                      <span>Configurações</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="p-4">
         <Button
+          asChild
           className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
           variant="default"
         >
-          <PlusCircle className="h-4 w-4" />
-          Ação Rápida
+          <Link to={isSupplier ? '/supplier/pedidos' : '/receitas'}>
+            <PlusCircle className="h-4 w-4" />
+            {isSupplier ? 'Ver Pedidos' : 'Nova Receita'}
+          </Link>
         </Button>
       </SidebarFooter>
     </Sidebar>
