@@ -9,12 +9,8 @@ export function LandingHero() {
       <div className="absolute bottom-0 left-0 w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl -ml-20 -mb-20" />
       <div className="container relative mx-auto px-4 py-20 md:py-32 max-w-6xl">
         <div className="text-center space-y-6">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-sm font-medium">
-            <Sparkles className="h-4 w-4" />
-            Powered by AI · Gestão Inteligente
-          </div>
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-            Gerencie seu restaurante com
+            Gerencie seu negocio com
             <span className="block text-emerald-600 dark:text-emerald-400">
               precisão e inteligência
             </span>
