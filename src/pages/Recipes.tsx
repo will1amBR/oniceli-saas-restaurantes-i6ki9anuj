@@ -173,30 +173,33 @@ export default function Recipes() {
                 </div>
               </CardContent>
               <CardFooter className="pt-0 border-t mt-4 p-4">
-                <div className="grid grid-cols-3 gap-2 w-full">
+                <div className="flex items-center gap-1.5 w-full">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-full justify-center"
+                    className="flex-1 gap-1 text-xs h-9 justify-center"
                     onClick={() => openDetail(recipe)}
                   >
-                    <Eye className="mr-1 h-4 w-4 shrink-0" /> Ficha
+                    <Eye className="h-3.5 w-3.5 shrink-0" />
+                    <span>Ficha</span>
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-full justify-center"
+                    className="flex-1 gap-1 text-xs h-9 justify-center"
                     onClick={() => openEdit(recipe)}
                   >
-                    <Edit className="mr-1 h-4 w-4 shrink-0" /> Editar
+                    <Edit className="h-3.5 w-3.5 shrink-0" />
+                    <span>Editar</span>
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-full justify-center text-red-600 hover:text-red-700"
+                    className="flex-1 gap-1 text-xs h-9 justify-center text-red-600 hover:text-red-700"
                     onClick={() => handleDelete(recipe.id)}
                   >
-                    <Trash2 className="mr-1 h-4 w-4 shrink-0" /> Excluir
+                    <Trash2 className="h-3.5 w-3.5 shrink-0" />
+                    <span>Excluir</span>
                   </Button>
                 </div>
               </CardFooter>

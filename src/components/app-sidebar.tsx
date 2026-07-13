@@ -59,7 +59,7 @@ export function AppSidebar() {
           className="flex items-center gap-2 font-bold text-xl text-primary w-full"
         >
           <ChefHat className="h-6 w-6 text-primary" />
-          <span>{user?.name || 'Oniceli'}</span>
+          <span>{user?.name || 'Serena Café'}</span>
         </Link>
       </SidebarHeader>
 

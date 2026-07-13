@@ -34,7 +34,7 @@ function PWARegister() {
 }
 
 function AuthRedirect() {
-  const { isAuthenticated, loading } = useAuth()
+  const { isAuthenticated, loading, user } = useAuth()
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -42,7 +42,11 @@ function AuthRedirect() {
       </div>
     )
   }
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Landing />
+  if (isAuthenticated) {
+    const target = user?.role === 'supplier' ? '/supplier/dashboard' : '/dashboard'
+    return <Navigate to={target} replace />
+  }
+  return <Landing />
 }
 
 const App = () => (

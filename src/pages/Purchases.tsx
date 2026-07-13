@@ -26,14 +26,11 @@ import { buildReorderMessage, buildWhatsAppUrl } from '@/lib/whatsapp'
 import { cn } from '@/lib/utils'
 
 const statusConfig: Record<string, { label: string; className: string }> = {
-  pending: { label: 'Pendente', className: 'bg-amber-100 text-amber-800 whitespace-nowrap' },
-  processing: {
-    label: 'Em Processamento',
-    className: 'bg-blue-100 text-blue-800 whitespace-nowrap',
-  },
-  shipped: { label: 'Enviado', className: 'bg-cyan-100 text-cyan-800 whitespace-nowrap' },
-  delivered: { label: 'Entregue', className: 'bg-emerald-100 text-emerald-800 whitespace-nowrap' },
-  cancelled: { label: 'Cancelado', className: 'bg-red-100 text-red-800 whitespace-nowrap' },
+  pending: { label: 'Pendente', className: 'bg-amber-100 text-amber-800' },
+  processing: { label: 'Processando', className: 'bg-blue-100 text-blue-800' },
+  shipped: { label: 'Enviado', className: 'bg-cyan-100 text-cyan-800' },
+  delivered: { label: 'Entregue', className: 'bg-emerald-100 text-emerald-800' },
+  cancelled: { label: 'Cancelado', className: 'bg-red-100 text-red-800' },
 }
 
 function parseItems(order: Order): OrderItem[] {
@@ -170,7 +167,7 @@ export default function Purchases() {
                             <Badge
                               variant="secondary"
                               className={cn(
-                                'text-xs h-6 px-2.5 inline-flex items-center justify-center whitespace-nowrap',
+                                'text-xs px-2.5 py-0.5 inline-flex items-center justify-center whitespace-nowrap rounded-full text-center',
                                 config.className,
                               )}
                             >
@@ -245,7 +242,7 @@ export default function Purchases() {
                       <Badge
                         variant="outline"
                         className={cn(
-                          'text-xs h-6 px-2.5 inline-flex items-center justify-center whitespace-nowrap',
+                          'text-xs px-2.5 py-0.5 inline-flex items-center justify-center whitespace-nowrap rounded-full text-center',
                           config.className,
                         )}
                       >
