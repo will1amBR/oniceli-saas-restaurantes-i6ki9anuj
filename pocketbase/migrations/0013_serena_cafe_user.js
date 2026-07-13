@@ -7,7 +7,7 @@ migrate(
       var usersCol = app.findCollectionByNameOrId('_pb_users_auth_')
       var user = new Record(usersCol)
       user.setEmail('serena@teste.com.br')
-      user.setPassword('teste')
+      user.setPassword('Skip@Pass')
       user.setVerified(true)
       user.set('name', 'Serena Café')
       user.set('role', 'restaurant')

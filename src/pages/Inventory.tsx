@@ -197,9 +197,11 @@ export default function Inventory() {
                         R$ {item.unit_cost.toFixed(2)}
                       </TableCell>
                       <TableCell className="text-right">
-                        <span className="font-medium">{item.quantity}</span> {item.unit}
+                        <span className="font-medium">
+                          {item.quantity} {item.unit}
+                        </span>
                         <div className="text-[10px] text-muted-foreground">
-                          Min: {item.min_stock}
+                          Min: {item.min_stock} {item.unit}
                         </div>
                       </TableCell>
                       <TableCell className="text-sm">
@@ -269,7 +271,7 @@ export default function Inventory() {
                     <span className="font-medium text-foreground">
                       {item.quantity} {item.unit}
                     </span>{' '}
-                    (mín: {item.min_stock})
+                    (mín: {item.min_stock} {item.unit})
                   </span>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

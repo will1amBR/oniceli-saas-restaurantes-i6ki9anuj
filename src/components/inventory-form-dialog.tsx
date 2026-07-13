@@ -154,6 +154,22 @@ export function InventoryFormDialog({
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-3">
+              <Label className="text-right">Medida</Label>
+              <Select
+                value={formData.unit}
+                onValueChange={(v) => setFormData({ ...formData, unit: v })}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Selecione..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Kg">Kg</SelectItem>
+                  <SelectItem value="G">G</SelectItem>
+                  <SelectItem value="Unidade">Unidade</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-3">
               <Label className="text-right">Custo</Label>
               <Input
                 type="number"

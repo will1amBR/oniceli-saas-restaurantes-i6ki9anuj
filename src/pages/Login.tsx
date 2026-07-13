@@ -145,7 +145,7 @@ export default function Login() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => demoLogin('serena@teste.com.br', 'teste')}
+                onClick={() => demoLogin('serena@teste.com.br', 'Skip@Pass')}
                 disabled={loading}
                 className="w-full gap-1.5 mb-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
               >
