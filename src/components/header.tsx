@@ -43,8 +43,8 @@ export function Header() {
           </span>
         </Button>
 
-        <span className="hidden lg:inline-flex text-sm font-medium text-muted-foreground truncate">
-          {user?.name || 'Usuário'}
+        <span className="hidden lg:inline-flex text-sm font-medium text-muted-foreground truncate max-w-[200px]">
+          {user?.name || 'Serena Café'}
         </span>
 
         <NotificationCenter />

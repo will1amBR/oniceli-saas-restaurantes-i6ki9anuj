@@ -11,6 +11,7 @@ import {
   ChefHat,
   Truck,
   ClipboardList,
+  BookOpen,
 } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 
@@ -30,6 +31,7 @@ import { Button } from '@/components/ui/button'
 
 const restaurantNav = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
+  { title: 'Cardápio', url: '/cardapios', icon: BookOpen },
   { title: 'Estoque', url: '/estoque', icon: Package },
   { title: 'Receitas', url: '/receitas', icon: UtensilsCrossed },
   { title: 'Vendas', url: '/vendas', icon: TrendingUp },
@@ -57,7 +59,7 @@ export function AppSidebar() {
           className="flex items-center gap-2 font-bold text-xl text-primary w-full"
         >
           <ChefHat className="h-6 w-6 text-primary" />
-          <span>Oniceli</span>
+          <span>{user?.name || 'Oniceli'}</span>
         </Link>
       </SidebarHeader>
 

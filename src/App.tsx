@@ -1,15 +1,17 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { Loader2 } from 'lucide-react'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { RoleProvider } from '@/contexts/role-context'
-import { AuthProvider } from '@/hooks/use-auth'
+import { AuthProvider, useAuth } from '@/hooks/use-auth'
 import { ProtectedRoute } from '@/components/protected-route'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Onboarding from './pages/Onboarding'
 import Index from './pages/Index'
+import Menu from './pages/Menu'
 import Inventory from './pages/Inventory'
 import Recipes from './pages/Recipes'
 import Sales from './pages/Sales'
@@ -31,6 +33,18 @@ function PWARegister() {
   return null
 }
 
+function AuthRedirect() {
+  const { isAuthenticated, loading } = useAuth()
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Landing />
+}
+
 const App = () => (
   <BrowserRouter>
     <AuthProvider>
@@ -40,7 +54,8 @@ const App = () => (
           <Sonner />
           <PWARegister />
           <Routes>
-            <Route path="/" element={<Landing />} />
+            <Route path="/" element={<AuthRedirect />} />
+            <Route path="/landing" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route
@@ -51,6 +66,7 @@ const App = () => (
               }
             >
               <Route path="/dashboard" element={<Index />} />
+              <Route path="/cardapios" element={<Menu />} />
               <Route path="/estoque" element={<Inventory />} />
               <Route path="/receitas" element={<Recipes />} />
               <Route path="/vendas" element={<Sales />} />

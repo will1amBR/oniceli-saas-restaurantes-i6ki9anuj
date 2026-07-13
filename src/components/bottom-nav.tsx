@@ -1,11 +1,11 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Package, TrendingUp, LineChart, UtensilsCrossed } from 'lucide-react'
+import { LayoutDashboard, Package, TrendingUp, LineChart, BookOpen } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navItems = [
   { title: 'Início', url: '/dashboard', icon: LayoutDashboard },
+  { title: 'Cardápio', url: '/cardapios', icon: BookOpen },
   { title: 'Estoque', url: '/estoque', icon: Package },
-  { title: 'Receitas', url: '/receitas', icon: UtensilsCrossed },
   { title: 'Vendas', url: '/vendas', icon: TrendingUp },
   { title: 'Financ.', url: '/financeiro', icon: LineChart },
 ]
