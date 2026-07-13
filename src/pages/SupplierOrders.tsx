@@ -1,6 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Navigate } from 'react-router-dom'
-import { ClipboardList, Loader2, Package, Calendar, DollarSign, CreditCard } from 'lucide-react'
+import {
+  ClipboardList,
+  Loader2,
+  Package,
+  Calendar,
+  DollarSign,
+  CreditCard,
+  Scale,
+} from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -17,6 +25,7 @@ import { getSuppliers } from '@/services/suppliers'
 import { getOrdersForSupplier, updateOrderStatus, updateOrder, type Order } from '@/services/orders'
 import { getErrorMessage } from '@/lib/pocketbase/errors'
 import { cn } from '@/lib/utils'
+import type { OrderItem } from '@/services/orders'
 
 const paymentLabels: Record<string, string> = {
   pix: 'Pix',
@@ -87,12 +96,35 @@ export default function SupplierOrders() {
     }
   }
 
-  const getOrderItems = (order: Order) => {
+  const getOrderItems = (order: Order): OrderItem[] => {
     try {
-      return JSON.parse(order.items || '[]')
+      const parsed = JSON.parse(order.items || '[]')
+      if (Array.isArray(parsed)) {
+        return parsed.map((item: any) => ({
+          name: String(item.name || ''),
+          quantity: Number(item.quantity) || 0,
+          unit: String(item.unit || 'Unidade'),
+          price: Number(item.price) || 0,
+        }))
+      }
+      return []
     } catch {
       return []
     }
+  }
+
+  const formatUnit = (unit: string) => {
+    const unitMap: Record<string, string> = {
+      kg: 'Kg',
+      g: 'G',
+      unidade: 'Unidade',
+      unidades: 'Unidade',
+      l: 'L',
+      litro: 'L',
+      litros: 'L',
+      ml: 'mL',
+    }
+    return unitMap[unit.toLowerCase()] || unit
   }
 
   if (loading) {
@@ -159,15 +191,19 @@ export default function SupplierOrders() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="space-y-1">
-                    {items.map((item: any, idx: number) => (
+                  <div className="space-y-2">
+                    {items.map((item: OrderItem, idx: number) => (
                       <div
                         key={idx}
-                        className="flex justify-between text-sm border-b pb-1 last:border-0"
+                        className="flex items-center justify-between text-sm border-b pb-2 last:border-0"
                       >
-                        <span>
-                          {item.name} × {item.quantity} {item.unit}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <Scale className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          <span className="font-medium">{item.name}</span>
+                          <Badge variant="outline" className="text-xs font-normal">
+                            {item.quantity} {formatUnit(item.unit)}
+                          </Badge>
+                        </div>
                         <span className="font-mono text-muted-foreground">
                           R$ {(item.quantity * item.price).toFixed(2)}
                         </span>

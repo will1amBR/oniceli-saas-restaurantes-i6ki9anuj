@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Navigate } from 'react-router-dom'
-import { Plus, Edit, Upload, Package, Phone, Mail, Clock, Star } from 'lucide-react'
+import { Link, Navigate } from 'react-router-dom'
+import { Plus, Edit, Upload, Package, Phone, Mail, Clock, Star, ClipboardList } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -19,6 +19,7 @@ import { SupplierFinancialSummary } from '@/components/supplier-financial-summar
 import { SupplierBulkImport } from '@/components/supplier-bulk-import'
 import { SupplierPaymentProfile } from '@/components/supplier-payment-profile'
 import { SupplierFormDialog } from '@/components/supplier-form-dialog'
+import { SupplierKPIs } from '@/components/supplier-kpis'
 
 export default function SupplierDashboard() {
   const { user } = useAuth()
@@ -81,7 +82,28 @@ export default function SupplierDashboard() {
 
       {myProfile && (
         <>
+          <SupplierKPIs supplierId={myProfile.id} />
+
           <SupplierFinancialSummary supplierId={myProfile.id} />
+
+          <Card className="border-emerald-200 bg-emerald-50/50">
+            <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-6">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-100">
+                  <ClipboardList className="h-6 w-6 text-emerald-700" />
+                </div>
+                <div>
+                  <p className="font-semibold text-emerald-900">Gerenciar Pedidos</p>
+                  <p className="text-sm text-emerald-700">
+                    Acompanhe e atualize o status dos pedidos recebidos
+                  </p>
+                </div>
+              </div>
+              <Button asChild className="bg-emerald-600 hover:bg-emerald-700">
+                <Link to="/supplier/pedidos">Ver Pedidos</Link>
+              </Button>
+            </CardContent>
+          </Card>
 
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
