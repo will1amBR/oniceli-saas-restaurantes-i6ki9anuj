@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ChefHat, Menu, X } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
 
@@ -17,10 +17,7 @@ export function LandingHeader() {
     <header className="sticky top-0 z-50 w-full border-b bg-white/80 dark:bg-background/80 backdrop-blur-md">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6 max-w-6xl">
         <Link to="/" className="flex items-center gap-2 shrink-0">
-          <div className="rounded-lg bg-emerald-100 dark:bg-emerald-900/30 p-1.5">
-            <ChefHat className="h-5 w-5 text-emerald-600" />
-          </div>
-          <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+          <span className="text-xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
             Oniceli
           </span>
         </Link>
@@ -58,10 +55,9 @@ export function LandingHeader() {
             <div className="flex flex-col h-full">
               <div className="flex items-center justify-between p-4 border-b">
                 <Link to="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
-                  <div className="rounded-lg bg-emerald-100 dark:bg-emerald-900/30 p-1.5">
-                    <ChefHat className="h-5 w-5 text-emerald-600" />
-                  </div>
-                  <span className="text-xl font-bold tracking-tight">Oniceli</span>
+                  <span className="text-xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
+                    Oniceli
+                  </span>
                 </Link>
                 <Button
                   variant="ghost"

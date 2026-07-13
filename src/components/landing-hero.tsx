@@ -1,15 +1,12 @@
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Sparkles, Store, Truck } from 'lucide-react'
 
 export function LandingHero() {
   return (
     <section
       id="inicio"
-      className="relative overflow-hidden bg-gradient-to-b from-emerald-50 via-white to-white dark:from-emerald-950/20 dark:via-background dark:to-background"
+      className="relative bg-gradient-to-b from-emerald-50 via-white to-white dark:from-emerald-950/20 dark:via-background dark:to-background"
     >
-      <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl -mr-20 -mt-20" />
-      <div className="absolute bottom-0 left-0 w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl -ml-20 -mb-20" />
       <div className="container relative mx-auto px-4 py-20 md:py-32 max-w-6xl">
         <div className="text-center space-y-6">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
@@ -26,16 +23,12 @@ export function LandingHero() {
             <Button
               asChild
               size="lg"
-              className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 min-h-[48px]"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white min-h-[48px]"
             >
-              <Link to="/onboarding?role=restaurant">
-                <Store className="h-5 w-5" /> Sou um Restaurante
-              </Link>
+              <Link to="/onboarding?role=restaurant">Sou um Restaurante</Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="gap-2 min-h-[48px]">
-              <Link to="/onboarding?role=supplier">
-                <Truck className="h-5 w-5" /> Sou um Fornecedor
-              </Link>
+            <Button asChild size="lg" variant="outline" className="min-h-[48px]">
+              <Link to="/onboarding?role=supplier">Sou um Fornecedor</Link>
             </Button>
           </div>
           <div className="pt-2">

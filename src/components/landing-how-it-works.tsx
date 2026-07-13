@@ -1,8 +1,5 @@
-import { Store, Truck, BarChart } from 'lucide-react'
-
 const steps = [
   {
-    icon: Store,
     role: 'Para Restaurantes',
     items: [
       'Cadastre ingredientes e armazéns',
@@ -12,7 +9,6 @@ const steps = [
     ],
   },
   {
-    icon: Truck,
     role: 'Para Fornecedores',
     items: [
       'Cadastre seu catálogo de produtos',
@@ -22,7 +18,6 @@ const steps = [
     ],
   },
   {
-    icon: BarChart,
     role: 'Resultado',
     items: [
       'Menos desperdício (-30%)',
@@ -51,7 +46,6 @@ export function LandingHowItWorks() {
                 <div className="w-10 h-10 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
                   {i + 1}
                 </div>
-                <s.icon className="h-6 w-6 text-emerald-600 shrink-0" />
                 <h3 className="font-semibold text-lg">{s.role}</h3>
               </div>
               <ul className="space-y-2">
