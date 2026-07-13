@@ -6,42 +6,49 @@ import { cn } from '@/lib/utils'
 
 const plans = [
   {
-    name: 'Essencial',
-    price: 'R$ 99',
+    name: 'Lite',
+    price: 'R$ 290',
+    priceRange: 'R$ 290 - 450',
     period: '/mês',
-    description: 'Controle de estoque essencial para um restaurante.',
+    description: 'Ideal para Dark Kitchens e pequenos restaurantes.',
+    target: 'Dark Kitchens e Pequenos Restaurantes',
     features: [
-      'Gestão de estoque (até 100 itens)',
+      'Gestão de estoque (até 200 itens)',
       '1 restaurante',
       'Alertas de validade',
-      '1 usuário',
+      'Controle de desperdício',
+      '2 usuários',
     ],
     highlighted: false,
-    cta: 'Começar Grátis',
+    cta: 'Começar com Lite',
     link: '/onboarding?role=restaurant',
   },
   {
-    name: 'Profissional',
-    price: 'R$ 249',
+    name: 'Pro',
+    price: 'R$ 600',
+    priceRange: 'R$ 600 - 950',
     period: '/mês',
-    description: 'Fichas técnicas, pedidos a fornecedores e insights com IA.',
+    description: 'Para restaurantes com faturamento acima de R$ 100k.',
+    target: 'Restaurantes com faturamento R$ 100k+',
     features: [
       'Estoque ilimitado',
       'Fichas técnicas automatizadas',
       'Pedidos a fornecedores',
       'Insights com IA',
       'Relatórios financeiros',
-      'Até 5 usuários',
+      'Até 10 usuários',
     ],
     highlighted: true,
-    cta: 'Testar Profissional',
+    cta: 'Testar Pro',
     link: '/onboarding?role=restaurant',
   },
   {
     name: 'Enterprise',
-    price: 'R$ 599',
+    price: 'R$ 2000',
+    priceRange: 'R$ 2000+',
     period: '/mês',
     description: 'Gestão multi-unidade e suporte prioritário para grandes operações.',
+    target: 'Redes e Grandes Operações',
     features: [
       'Multi-loja e multi-usuário',
       'Gestão de múltiplas unidades',
@@ -90,10 +97,13 @@ export function LandingPlans() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-xl">{plan.name}</CardTitle>
                 <CardDescription className="min-h-[40px]">{plan.description}</CardDescription>
+                <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 mt-1">
+                  {plan.target}
+                </span>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col">
                 <div className="mb-4">
-                  <span className="text-3xl font-bold tracking-tight">{plan.price}</span>
+                  <span className="text-3xl font-bold tracking-tight">{plan.priceRange}</span>
                   <span className="text-muted-foreground">{plan.period}</span>
                 </div>
                 <ul className="space-y-2 mb-6 flex-1">

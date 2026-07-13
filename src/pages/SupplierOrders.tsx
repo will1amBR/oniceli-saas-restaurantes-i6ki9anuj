@@ -27,6 +27,8 @@ import { getErrorMessage } from '@/lib/pocketbase/errors'
 import { cn } from '@/lib/utils'
 import type { OrderItem } from '@/services/orders'
 
+const ORDER_ITEM_FIELDS = ['name', 'quantity', 'unit'] as const
+
 const paymentLabels: Record<string, string> = {
   pix: 'Pix',
   card: 'Cartão',
@@ -104,7 +106,7 @@ export default function SupplierOrders() {
           name: String(item.name || ''),
           quantity: Number(item.quantity) || 0,
           unit: String(item.unit || 'Unidade'),
-          price: Number(item.price) || 0,
+          price: 0,
         }))
       }
       return []
@@ -171,13 +173,6 @@ export default function SupplierOrders() {
                           <Calendar className="h-3 w-3" />
                           {new Date(order.created).toLocaleDateString('pt-BR')}
                         </span>
-                        <span className="flex items-center gap-1">
-                          <DollarSign className="h-3 w-3" />
-                          R${' '}
-                          {(order.total_amount || 0).toLocaleString('pt-BR', {
-                            minimumFractionDigits: 2,
-                          })}
-                        </span>
                         {order.payment_method && (
                           <span className="flex items-center gap-1">
                             <CreditCard className="h-3 w-3" />
@@ -204,9 +199,6 @@ export default function SupplierOrders() {
                             {item.quantity} {formatUnit(item.unit)}
                           </Badge>
                         </div>
-                        <span className="font-mono text-muted-foreground">
-                          R$ {(item.quantity * item.price).toFixed(2)}
-                        </span>
                       </div>
                     ))}
                   </div>

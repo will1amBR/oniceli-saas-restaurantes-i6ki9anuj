@@ -166,6 +166,7 @@ export function InventoryFormDialog({
                   <SelectItem value="Kg">Kg</SelectItem>
                   <SelectItem value="G">G</SelectItem>
                   <SelectItem value="Unidade">Unidade</SelectItem>
+                  <SelectItem value="ML">ML</SelectItem>
                 </SelectContent>
               </Select>
             </div>

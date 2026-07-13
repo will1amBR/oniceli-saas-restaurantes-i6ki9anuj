@@ -32,6 +32,7 @@ import { SupplierPaymentProfile } from '@/components/supplier-payment-profile'
 import { SupplierFormDialog } from '@/components/supplier-form-dialog'
 import { SupplierKPIs } from '@/components/supplier-kpis'
 import { SupplierLeadTimeCard } from '@/components/supplier-lead-time-card'
+import { SupplierOrderStatusBreakdown } from '@/components/supplier-order-status-breakdown'
 
 export default function SupplierDashboard() {
   const { user } = useAuth()
@@ -104,6 +105,8 @@ export default function SupplierDashboard() {
           </div>
 
           <SupplierKPIs supplierId={myProfile.id} />
+
+          <SupplierOrderStatusBreakdown supplierId={myProfile.id} />
 
           <SupplierFinancialSummary supplierId={myProfile.id} />
 
