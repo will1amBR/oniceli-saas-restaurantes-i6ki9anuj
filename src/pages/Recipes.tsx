@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Edit, Trash2, ChefHat, Loader2 } from 'lucide-react'
+import { Plus, Edit, Trash2, ChefHat, Loader2, Eye } from 'lucide-react'
 import {
   Card,
   CardContent,
@@ -17,6 +17,7 @@ import { getMenuItems, deleteMenuItem, type MenuItem } from '@/services/menu-ite
 import { getInventory, type InventoryItem } from '@/services/inventory'
 import { getErrorMessage } from '@/lib/pocketbase/errors'
 import { RecipeFormDialog } from '@/components/recipe-form-dialog'
+import { RecipeDetailDialog } from '@/components/recipe-detail-dialog'
 import { cn } from '@/lib/utils'
 
 export default function Recipes() {
@@ -26,6 +27,8 @@ export default function Recipes() {
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingRecipe, setEditingRecipe] = useState<MenuItem | null>(null)
+  const [detailRecipe, setDetailRecipe] = useState<MenuItem | null>(null)
+  const [detailOpen, setDetailOpen] = useState(false)
 
   const loadData = useCallback(async () => {
     try {
@@ -51,6 +54,10 @@ export default function Recipes() {
   const openEdit = (recipe: MenuItem) => {
     setEditingRecipe(recipe)
     setDialogOpen(true)
+  }
+  const openDetail = (recipe: MenuItem) => {
+    setDetailRecipe(recipe)
+    setDetailOpen(true)
   }
 
   const handleDelete = async (id: string) => {
@@ -155,19 +162,27 @@ export default function Recipes() {
             <CardFooter className="pt-0 border-t mt-4 p-4 gap-2">
               <Button
                 variant="outline"
-                className="w-full"
+                className="flex-1"
                 size="sm"
-                onClick={() => openEdit(recipe)}
+                onClick={() => openDetail(recipe)}
               >
-                <Edit className="mr-2 h-4 w-4" /> Editar
+                <Eye className="mr-1.5 h-4 w-4" /> Ficha
               </Button>
               <Button
                 variant="outline"
-                className="w-full text-red-600 hover:text-red-700"
+                className="flex-1"
+                size="sm"
+                onClick={() => openEdit(recipe)}
+              >
+                <Edit className="mr-1.5 h-4 w-4" /> Editar
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 text-red-600 hover:text-red-700"
                 size="sm"
                 onClick={() => handleDelete(recipe.id)}
               >
-                <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                <Trash2 className="mr-1.5 h-4 w-4" /> Excluir
               </Button>
             </CardFooter>
           </Card>
@@ -193,6 +208,12 @@ export default function Recipes() {
         menuItem={editingRecipe}
         inventoryItems={inventory}
         onSaved={loadData}
+      />
+      <RecipeDetailDialog
+        recipe={detailRecipe}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        inventoryItems={inventory}
       />
     </div>
   )

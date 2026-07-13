@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 export function LandingCTA() {
   return (
     <>
-      <section id="planos" className="py-20 bg-gradient-to-r from-emerald-600 to-cyan-600">
+      <section className="py-20 bg-gradient-to-r from-emerald-600 to-cyan-600">
         <div className="container mx-auto px-4 max-w-4xl text-center">
           <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight">
             Pronto para revolucionar seu restaurante?

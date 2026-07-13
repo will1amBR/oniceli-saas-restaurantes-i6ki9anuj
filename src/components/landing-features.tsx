@@ -1,29 +1,36 @@
+import { Calculator, Package, Truck, Trash2, Brain, BarChart3 } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
 const features = [
   {
+    title: 'Cálculo Automático de Custos',
+    desc: 'Fichas técnicas vinculadas ao estoque. Quando o preço de um ingrediente muda, o custo do prato é recalculado em tempo real.',
+    icon: Calculator,
+  },
+  {
+    title: 'Integração de Estoque',
+    desc: 'Controle por local de armazenamento: câmara fria, freezer, geladeira e estoque seco. Alertas automáticos de reposição.',
+    icon: Package,
+  },
+  {
+    title: 'Gestão de Fornecedores',
+    desc: 'Marketplace integrado. Crie pedidos, acompanhe entregas e gerencie relacionamentos com todos os seus fornecedores.',
+    icon: Truck,
+  },
+  {
+    title: 'Controle de Desperdício',
+    desc: 'Registre perdas, acompanhe validades e receba sugestões de promoção para ingredientes próximos ao vencimento.',
+    icon: Trash2,
+  },
+  {
     title: 'Previsões com IA',
-    desc: 'Antecipe demanda e sugestões de compra inteligentes baseadas em histórico e sazonalidade.',
-  },
-  {
-    title: 'Cálculo de CMV',
-    desc: 'Custos exatos por prato com fichas técnicas vinculadas aos ingredientes em tempo real.',
-  },
-  {
-    title: 'Redução de Desperdício',
-    desc: 'Alertas de validade e sugestões de promoção para ingredientes próximos ao vencimento.',
-  },
-  {
-    title: 'Gestão de Estoque',
-    desc: 'Controle por local de armazenamento: câmara fria, freezer, geladeira e estoque seco.',
+    desc: 'Antecipe demanda e receba sugestões de compra inteligentes baseadas em histórico de vendas e sazonalidade.',
+    icon: Brain,
   },
   {
     title: 'Relatórios Financeiros',
-    desc: 'DRE gerencial, margem por prato e indicadores operacionais em tempo real.',
-  },
-  {
-    title: 'Multi-Tenant Seguro',
-    desc: 'Cada restaurante e fornecedor com dados isolados e gestão de permissões por papel.',
+    desc: 'DRE gerencial, CMV por prato, margem de lucro e indicadores operacionais em tempo real.',
+    icon: BarChart3,
   },
 ]
 
@@ -46,6 +53,9 @@ export function LandingFeatures() {
               className="hover:shadow-lg hover:border-emerald-500/50 transition-all duration-300"
             >
               <CardHeader>
+                <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-2">
+                  <f.icon className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                </div>
                 <CardTitle className="text-lg text-emerald-600 dark:text-emerald-400">
                   {f.title}
                 </CardTitle>

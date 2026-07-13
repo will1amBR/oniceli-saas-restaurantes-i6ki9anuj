@@ -2,6 +2,7 @@ import { LandingHeader } from '@/components/landing-header'
 import { LandingHero } from '@/components/landing-hero'
 import { LandingFeatures } from '@/components/landing-features'
 import { LandingHowItWorks } from '@/components/landing-how-it-works'
+import { LandingPlans } from '@/components/landing-plans'
 import { LandingCTA } from '@/components/landing-cta'
 
 export default function Landing() {
@@ -11,6 +12,7 @@ export default function Landing() {
       <LandingHero />
       <LandingFeatures />
       <LandingHowItWorks />
+      <LandingPlans />
       <LandingCTA />
     </div>
   )
