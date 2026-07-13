@@ -18,7 +18,7 @@ export interface Order {
   updated: string
   expand?: {
     restaurant_id?: { id: string; name: string; email: string }
-    supplier_id?: { id: string; name: string }
+    supplier_id?: { id: string; name: string; phone: string; categories?: string }
   }
 }
 

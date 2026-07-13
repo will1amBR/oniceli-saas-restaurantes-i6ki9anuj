@@ -1,30 +1,104 @@
-import { ShoppingBag, Search, ExternalLink, CalendarClock } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { Navigate, Link } from 'react-router-dom'
+import {
+  ShoppingBag,
+  MessageCircle,
+  Calendar,
+  DollarSign,
+  Truck,
+  Package,
+  Loader2,
+} from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { mockPurchases } from '@/lib/data'
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { useAuth } from '@/hooks/use-auth'
+import { useRealtime } from '@/hooks/use-realtime'
+import { getOrdersForRestaurant, type Order, type OrderItem } from '@/services/orders'
+import { buildReorderMessage, buildWhatsAppUrl } from '@/lib/whatsapp'
+import { cn } from '@/lib/utils'
+
+const statusConfig: Record<string, { label: string; className: string }> = {
+  pending: { label: 'Pendente', className: 'bg-amber-100 text-amber-800' },
+  processing: { label: 'Em Processamento', className: 'bg-blue-100 text-blue-800' },
+  shipped: { label: 'Enviado', className: 'bg-cyan-100 text-cyan-800' },
+  delivered: { label: 'Entregue', className: 'bg-emerald-100 text-emerald-800' },
+  cancelled: { label: 'Cancelado', className: 'bg-red-100 text-red-800' },
+}
+
+function parseItems(order: Order): OrderItem[] {
+  try {
+    return JSON.parse(order.items || '[]')
+  } catch {
+    return []
+  }
+}
 
 export default function Purchases() {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Entregue':
-        return 'bg-emerald-100 text-emerald-800'
-      case 'Solicitado':
-        return 'bg-blue-100 text-blue-800'
-      case 'Em Trânsito':
-        return 'bg-amber-100 text-amber-800'
-      default:
-        return 'bg-slate-100 text-slate-800'
+  const { user } = useAuth()
+  const [orders, setOrders] = useState<Order[]>([])
+  const [loading, setLoading] = useState(true)
+  const [supplierFilter, setSupplierFilter] = useState('all')
+
+  const loadData = useCallback(async () => {
+    if (!user?.id) return
+    try {
+      const data = await getOrdersForRestaurant(user.id)
+      setOrders(data)
+    } catch {
+      setOrders([])
+    } finally {
+      setLoading(false)
     }
+  }, [user?.id])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
+  useRealtime('orders', () => loadData())
+
+  if (!user) return null
+  if (user.role === 'supplier') return <Navigate to="/supplier/dashboard" replace />
+
+  const suppliers = Array.from(
+    new Map(
+      orders
+        .filter((o) => o.expand?.supplier_id)
+        .map((o) => [o.expand!.supplier_id!.id, o.expand!.supplier_id!]),
+    ).values(),
+  )
+
+  const filteredOrders =
+    supplierFilter === 'all'
+      ? orders
+      : orders.filter((o) => o.expand?.supplier_id?.id === supplierFilter)
+
+  const upcomingOrders = orders.filter(
+    (o) => o.status === 'pending' || o.status === 'processing' || o.status === 'shipped',
+  )
+
+  const handleReorder = (order: Order) => {
+    const supplier = order.expand?.supplier_id
+    if (!supplier) return
+    const items = parseItems(order)
+    const message = buildReorderMessage(supplier.name, items)
+    const url = buildWhatsAppUrl(supplier.phone || '', message)
+    window.open(url, '_blank')
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
   }
 
   return (
@@ -32,96 +106,148 @@ export default function Purchases() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Compras e Fornecedores</h1>
-          <p className="text-muted-foreground mt-1">
-            Conecte-se com o marketplace e acompanhe pedidos.
-          </p>
+          <p className="text-muted-foreground mt-1">Acompanhe pedidos e reordene via WhatsApp.</p>
         </div>
-        <Button className="bg-emerald-600 hover:bg-emerald-700">
-          <ShoppingBag className="mr-2 h-4 w-4" /> Fazer Pedido
+        <Button className="bg-emerald-600 hover:bg-emerald-700" asChild>
+          <Link to="/fornecedores">
+            <ShoppingBag className="mr-2 h-4 w-4" /> Fazer Pedido
+          </Link>
         </Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
         <Card className="md:col-span-2">
-          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4">
+          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b">
             <div>
               <CardTitle>Histórico de Pedidos</CardTitle>
-              <CardDescription>Acompanhe o status de entrega e valores pagos.</CardDescription>
+              <CardDescription>Filtre por fornecedor e reordene facilmente.</CardDescription>
             </div>
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Buscar por fornecedor..." className="pl-8" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Pedido</TableHead>
-                    <TableHead>Fornecedor</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Valor</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mockPurchases.map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell className="font-medium text-emerald-700">{order.id}</TableCell>
-                      <TableCell>{order.supplier}</TableCell>
-                      <TableCell className="text-muted-foreground">{order.date}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className={getStatusColor(order.status)}>
-                          {order.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-mono font-medium">
-                        R$ {order.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </TableCell>
-                    </TableRow>
+            {suppliers.length > 0 && (
+              <Select value={supplierFilter} onValueChange={setSupplierFilter}>
+                <SelectTrigger className="w-full sm:w-56">
+                  <SelectValue placeholder="Filtrar fornecedor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os fornecedores</SelectItem>
+                  {suppliers.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
                   ))}
-                </TableBody>
-              </Table>
-            </div>
+                </SelectContent>
+              </Select>
+            )}
+          </CardHeader>
+          <CardContent className="pt-4">
+            {filteredOrders.length === 0 ? (
+              <div className="text-center py-12">
+                <Package className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                <p className="text-muted-foreground">
+                  {orders.length === 0
+                    ? 'Nenhum pedido realizado ainda.'
+                    : 'Nenhum pedido para este fornecedor.'}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredOrders.map((order) => {
+                  const config = statusConfig[order.status] || statusConfig.pending
+                  const items = parseItems(order)
+                  const supplierName = order.expand?.supplier_id?.name || 'Fornecedor'
+                  return (
+                    <div
+                      key={order.id}
+                      className="flex flex-col gap-3 p-4 rounded-lg border hover:bg-muted/30 transition-colors"
+                    >
+                      <div className="flex flex-col sm:flex-row justify-between gap-2">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Package className="h-4 w-4 text-emerald-600" />
+                            <span className="font-medium">{supplierName}</span>
+                            <Badge variant="secondary" className={cn('text-xs', config.className)}>
+                              {config.label}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {new Date(order.created).toLocaleDateString('pt-BR')}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <DollarSign className="h-3 w-3" />
+                              R${' '}
+                              {(order.total_amount || 0).toLocaleString('pt-BR', {
+                                minimumFractionDigits: 2,
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200 shrink-0"
+                          onClick={() => handleReorder(order)}
+                        >
+                          <MessageCircle className="mr-1.5 h-4 w-4" />
+                          Reordenar
+                        </Button>
+                      </div>
+                      {items.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          {items.map((item, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs font-normal">
+                              {item.quantity} {item.unit} {item.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
 
         <Card className="bg-slate-50 dark:bg-slate-900 border-none shadow-inner">
           <CardHeader>
             <CardTitle className="flex items-center text-lg">
-              <CalendarClock className="mr-2 h-5 w-5 text-emerald-600" />
+              <Truck className="mr-2 h-5 w-5 text-emerald-600" />
               Próximas Entregas
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="bg-white dark:bg-slate-950 p-4 rounded-lg border shadow-sm">
-              <div className="flex justify-between items-start mb-2">
-                <span className="font-medium text-sm">Hortifruti Central</span>
-                <Badge variant="outline" className="text-xs">
-                  Hoje, 14:00
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Tomate, Cebola, Alho, Verduras diversas.
+            {upcomingOrders.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Nenhuma entrega pendente.
               </p>
-              <Button variant="link" size="sm" className="px-0 h-auto mt-2 text-emerald-600">
-                Ver detalhes do pedido <ExternalLink className="ml-1 h-3 w-3" />
-              </Button>
-            </div>
-
-            <div className="bg-white dark:bg-slate-950 p-4 rounded-lg border shadow-sm">
-              <div className="flex justify-between items-start mb-2">
-                <span className="font-medium text-sm">Laticínios Bom Campo</span>
-                <Badge variant="outline" className="text-xs">
-                  Amanhã
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground">Queijo Parmesão, Leite Integral.</p>
-              <Button variant="link" size="sm" className="px-0 h-auto mt-2 text-emerald-600">
-                Ver detalhes do pedido <ExternalLink className="ml-1 h-3 w-3" />
-              </Button>
-            </div>
+            ) : (
+              upcomingOrders.map((order) => {
+                const items = parseItems(order)
+                const supplierName = order.expand?.supplier_id?.name || 'Fornecedor'
+                const config = statusConfig[order.status] || statusConfig.pending
+                return (
+                  <div
+                    key={order.id}
+                    className="bg-white dark:bg-slate-950 p-4 rounded-lg border shadow-sm"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="font-medium text-sm">{supplierName}</span>
+                      <Badge variant="outline" className={cn('text-xs', config.className)}>
+                        {config.label}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {items.map((i) => i.name).join(', ')}
+                    </p>
+                    <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
+                      <Calendar className="h-3 w-3" />
+                      {new Date(order.created).toLocaleDateString('pt-BR')}
+                    </div>
+                  </div>
+                )
+              })
+            )}
           </CardContent>
         </Card>
       </div>
