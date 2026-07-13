@@ -26,11 +26,14 @@ import { buildReorderMessage, buildWhatsAppUrl } from '@/lib/whatsapp'
 import { cn } from '@/lib/utils'
 
 const statusConfig: Record<string, { label: string; className: string }> = {
-  pending: { label: 'Pendente', className: 'bg-amber-100 text-amber-800' },
-  processing: { label: 'Em Processamento', className: 'bg-blue-100 text-blue-800' },
-  shipped: { label: 'Enviado', className: 'bg-cyan-100 text-cyan-800' },
-  delivered: { label: 'Entregue', className: 'bg-emerald-100 text-emerald-800' },
-  cancelled: { label: 'Cancelado', className: 'bg-red-100 text-red-800' },
+  pending: { label: 'Pendente', className: 'bg-amber-100 text-amber-800 whitespace-nowrap' },
+  processing: {
+    label: 'Em Processamento',
+    className: 'bg-blue-100 text-blue-800 whitespace-nowrap',
+  },
+  shipped: { label: 'Enviado', className: 'bg-cyan-100 text-cyan-800 whitespace-nowrap' },
+  delivered: { label: 'Entregue', className: 'bg-emerald-100 text-emerald-800 whitespace-nowrap' },
+  cancelled: { label: 'Cancelado', className: 'bg-red-100 text-red-800 whitespace-nowrap' },
 }
 
 function parseItems(order: Order): OrderItem[] {
@@ -164,7 +167,13 @@ export default function Purchases() {
                           <div className="flex items-center gap-2">
                             <Package className="h-4 w-4 text-emerald-600" />
                             <span className="font-medium">{supplierName}</span>
-                            <Badge variant="secondary" className={cn('text-xs', config.className)}>
+                            <Badge
+                              variant="secondary"
+                              className={cn(
+                                'text-xs h-6 px-2.5 inline-flex items-center justify-center whitespace-nowrap',
+                                config.className,
+                              )}
+                            >
                               {config.label}
                             </Badge>
                           </div>
@@ -233,7 +242,13 @@ export default function Purchases() {
                   >
                     <div className="flex justify-between items-start mb-2">
                       <span className="font-medium text-sm">{supplierName}</span>
-                      <Badge variant="outline" className={cn('text-xs', config.className)}>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          'text-xs h-6 px-2.5 inline-flex items-center justify-center whitespace-nowrap',
+                          config.className,
+                        )}
+                      >
                         {config.label}
                       </Badge>
                     </div>

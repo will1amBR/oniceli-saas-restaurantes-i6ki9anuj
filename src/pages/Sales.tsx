@@ -1,24 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, TrendingUp } from 'lucide-react'
+import { Loader2, Send } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog'
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { useRealtime } from '@/hooks/use-realtime'
 import { useToast } from '@/hooks/use-toast'
@@ -33,13 +18,10 @@ export default function Sales() {
   const [sales, setSales] = useState<SaleRecord[]>([])
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [formData, setFormData] = useState({
-    item_id: '',
-    quantity_sold: 1,
-    date: '',
-    total_price: 0,
-  })
+  const [submitting, setSubmitting] = useState(false)
+  const [saleDate, setSaleDate] = useState(new Date().toISOString().split('T')[0])
+  const [search, setSearch] = useState('')
+  const [quantities, setQuantities] = useState<Record<string, number>>({})
 
   const loadData = useCallback(async () => {
     try {
@@ -75,131 +57,142 @@ export default function Sales() {
 
   const topItems = menuItems
     .map((m) => {
-      const itemSales = sales.filter((s) => s.item_id === m.id)
-      const qty = itemSales.reduce((sum, s) => sum + (s.quantity_sold || 0), 0)
-      return { name: m.name, margin: m.margin + '%', vol: qty }
+      const qty = sales
+        .filter((s) => s.item_id === m.id)
+        .reduce((sum, s) => sum + (s.quantity_sold || 0), 0)
+      return { name: m.name, margin: (m.margin || 0).toFixed(1) + '%', vol: qty }
     })
     .filter((i) => i.vol > 0)
     .sort((a, b) => b.vol - a.vol)
     .slice(0, 5)
 
-  const handleMenuItemChange = (id: string) => {
-    const menuItem = menuItems.find((m) => m.id === id)
-    setFormData({
-      ...formData,
-      item_id: id,
-      total_price: (menuItem?.price || 0) * formData.quantity_sold,
-    })
-  }
+  const filteredMenu = menuItems.filter(
+    (m) => m.active && m.name.toLowerCase().includes(search.toLowerCase()),
+  )
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmitDaily = async () => {
+    const entries = Object.entries(quantities).filter(([, qty]) => qty > 0)
+    if (entries.length === 0) {
+      toast({
+        title: 'Nenhuma venda',
+        description: 'Informe ao menos uma quantidade.',
+        variant: 'destructive',
+      })
+      return
+    }
+    setSubmitting(true)
     try {
-      await createSale({ ...formData, user_id: user?.id || '' })
-      toast({ title: 'Venda registrada!', description: 'A venda foi salva com sucesso.' })
-      setDialogOpen(false)
-      setFormData({ item_id: '', quantity_sold: 1, date: '', total_price: 0 })
+      for (const [itemId, qty] of entries) {
+        const menuItem = menuItems.find((m) => m.id === itemId)
+        await createSale({
+          item_id: itemId,
+          quantity_sold: qty,
+          date: saleDate,
+          total_price: (menuItem?.price || 0) * qty,
+          user_id: user?.id || '',
+        })
+      }
+      toast({
+        title: 'Vendas registradas!',
+        description: `${entries.length} item(s) salvos com sucesso.`,
+      })
+      setQuantities({})
     } catch (err) {
       toast({ title: 'Erro', description: getErrorMessage(err), variant: 'destructive' })
+    } finally {
+      setSubmitting(false)
     }
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Vendas</h1>
-          <p className="text-muted-foreground mt-1">Análise de pratos vendidos e tendências.</p>
-        </div>
-        <Button
-          onClick={() => {
-            setFormData({
-              item_id: '',
-              quantity_sold: 1,
-              date: new Date().toISOString().split('T')[0],
-              total_price: 0,
-            })
-            setDialogOpen(true)
-          }}
-          className="bg-emerald-600 hover:bg-emerald-700"
-        >
-          <Plus className="mr-2 h-4 w-4" /> Nova Venda
-        </Button>
+      <div>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Vendas</h1>
+        <p className="text-muted-foreground mt-1">
+          Registre vendas diárias e acompanhe tendências.
+        </p>
       </div>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Registrar Venda</DialogTitle>
-            <DialogDescription>Registre uma nova venda.</DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmit}>
-            <div className="grid gap-3 py-2">
-              <div className="grid grid-cols-4 items-center gap-3">
-                <Label className="text-right">Prato</Label>
-                <Select value={formData.item_id} onValueChange={handleMenuItemChange}>
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Selecione..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {menuItems.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        {m.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-3">
-                <Label className="text-right">Qtd</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={formData.quantity_sold}
-                  onChange={(e) => {
-                    const q = parseInt(e.target.value) || 1
-                    const mi = menuItems.find((m) => m.id === formData.item_id)
-                    setFormData({
-                      ...formData,
-                      quantity_sold: q,
-                      total_price: (mi?.price || 0) * q,
-                    })
-                  }}
-                  className="col-span-3"
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-3">
-                <Label className="text-right">Data</Label>
-                <Input
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="col-span-3"
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-3">
-                <Label className="text-right">Total R$</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={formData.total_price}
-                  onChange={(e) =>
-                    setFormData({ ...formData, total_price: parseFloat(e.target.value) || 0 })
-                  }
-                  className="col-span-3"
-                />
-              </div>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Registro de Vendas Diárias</CardTitle>
+          <CardDescription>Selecione os pratos vendidos e informe a quantidade.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Data</Label>
+              <Input
+                type="date"
+                value={saleDate}
+                onChange={(e) => setSaleDate(e.target.value)}
+                className="sm:w-48"
+              />
             </div>
-            <DialogFooter>
-              <Button type="submit" className="bg-emerald-600">
-                Salvar
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+            <div className="space-y-1.5 flex-1">
+              <Label className="text-xs">Buscar prato</Label>
+              <Input
+                placeholder="Digite o nome do prato..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="space-y-2 max-h-[350px] overflow-y-auto rounded-lg border p-2 bg-muted/20">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : filteredMenu.length === 0 ? (
+              <p className="text-center text-sm text-muted-foreground py-8">
+                Nenhum prato encontrado.
+              </p>
+            ) : (
+              filteredMenu.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between gap-3 p-2.5 rounded-md bg-background border"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{item.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      R$ {(item.price || 0).toFixed(2)} · Margem {(item.margin || 0).toFixed(1)}%
+                    </p>
+                  </div>
+                  <Input
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    className="w-20 text-center"
+                    value={quantities[item.id] || ''}
+                    onChange={(e) =>
+                      setQuantities((prev) => ({
+                        ...prev,
+                        [item.id]: parseInt(e.target.value) || 0,
+                      }))
+                    }
+                  />
+                </div>
+              ))
+            )}
+          </div>
+          <Button
+            onClick={handleSubmitDaily}
+            disabled={submitting}
+            className="w-full bg-emerald-600 hover:bg-emerald-700"
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Registrando...
+              </>
+            ) : (
+              <>
+                <Send className="mr-2 h-4 w-4" /> Registrar Vendas
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>

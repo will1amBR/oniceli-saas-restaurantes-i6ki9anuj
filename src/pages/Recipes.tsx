@@ -172,31 +172,33 @@ export default function Recipes() {
                   </div>
                 </div>
               </CardContent>
-              <CardFooter className="pt-0 border-t mt-4 p-4 gap-2">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  size="sm"
-                  onClick={() => openDetail(recipe)}
-                >
-                  <Eye className="mr-1.5 h-4 w-4" /> Ficha
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  size="sm"
-                  onClick={() => openEdit(recipe)}
-                >
-                  <Edit className="mr-1.5 h-4 w-4" /> Editar
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 text-red-600 hover:text-red-700"
-                  size="sm"
-                  onClick={() => handleDelete(recipe.id)}
-                >
-                  <Trash2 className="mr-1.5 h-4 w-4" /> Excluir
-                </Button>
+              <CardFooter className="pt-0 border-t mt-4 p-4">
+                <div className="grid grid-cols-3 gap-2 w-full">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-center"
+                    onClick={() => openDetail(recipe)}
+                  >
+                    <Eye className="mr-1 h-4 w-4 shrink-0" /> Ficha
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-center"
+                    onClick={() => openEdit(recipe)}
+                  >
+                    <Edit className="mr-1 h-4 w-4 shrink-0" /> Editar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-center text-red-600 hover:text-red-700"
+                    onClick={() => handleDelete(recipe.id)}
+                  >
+                    <Trash2 className="mr-1 h-4 w-4 shrink-0" /> Excluir
+                  </Button>
+                </div>
               </CardFooter>
             </Card>
           ))}
