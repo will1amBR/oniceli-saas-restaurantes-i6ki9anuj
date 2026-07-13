@@ -1,21 +1,26 @@
-import { Calculator, Package, Truck, Trash2, Brain, BarChart3 } from 'lucide-react'
+import { Package, Calculator, Truck, Brain, Trash2, BarChart3 } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
 const features = [
   {
-    title: 'Cálculo Automático de Custos',
-    desc: 'Fichas técnicas vinculadas ao estoque. Quando o preço de um ingrediente muda, o custo do prato é recalculado em tempo real.',
-    icon: Calculator,
-  },
-  {
-    title: 'Integração de Estoque',
-    desc: 'Controle por local de armazenamento: câmara fria, freezer, geladeira e estoque seco. Alertas automáticos de reposição.',
+    title: 'Gestão de Estoque Real-time',
+    desc: 'Controle por local de armazenamento com alertas automáticos de reposição e validade em tempo real.',
     icon: Package,
   },
   {
-    title: 'Gestão de Fornecedores',
+    title: 'Ficha Técnica Automatizada',
+    desc: 'Crie receitas vinculadas ao estoque. O custo do prato é recalculado automaticamente quando o preço de um ingrediente muda.',
+    icon: Calculator,
+  },
+  {
+    title: 'Painel do Fornecedor',
     desc: 'Marketplace integrado. Crie pedidos, acompanhe entregas e gerencie relacionamentos com todos os seus fornecedores.',
     icon: Truck,
+  },
+  {
+    title: 'Previsão de Demanda com IA',
+    desc: 'Antecipe a demanda e receba sugestões de compra inteligentes baseadas em histórico de vendas e sazonalidade.',
+    icon: Brain,
   },
   {
     title: 'Controle de Desperdício',
@@ -23,13 +28,8 @@ const features = [
     icon: Trash2,
   },
   {
-    title: 'Previsões com IA',
-    desc: 'Antecipe demanda e receba sugestões de compra inteligentes baseadas em histórico de vendas e sazonalidade.',
-    icon: Brain,
-  },
-  {
     title: 'Relatórios Financeiros',
-    desc: 'DRE gerencial, CMV por prato, margem de lucro e indicadores operacionais em tempo real.',
+    desc: 'CMV por prato, margem de lucro e indicadores operacionais em tempo real para decisões assertivas.',
     icon: BarChart3,
   },
 ]
