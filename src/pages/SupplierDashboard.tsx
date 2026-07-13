@@ -1,6 +1,17 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link, Navigate } from 'react-router-dom'
-import { Plus, Edit, Upload, Package, Phone, Mail, Clock, Star, ClipboardList } from 'lucide-react'
+import {
+  Plus,
+  Edit,
+  Upload,
+  Package,
+  Phone,
+  Mail,
+  Clock,
+  Star,
+  ClipboardList,
+  Wallet,
+} from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -20,6 +31,7 @@ import { SupplierBulkImport } from '@/components/supplier-bulk-import'
 import { SupplierPaymentProfile } from '@/components/supplier-payment-profile'
 import { SupplierFormDialog } from '@/components/supplier-form-dialog'
 import { SupplierKPIs } from '@/components/supplier-kpis'
+import { SupplierLeadTimeCard } from '@/components/supplier-lead-time-card'
 
 export default function SupplierDashboard() {
   const { user } = useAuth()
@@ -82,9 +94,20 @@ export default function SupplierDashboard() {
 
       {myProfile && (
         <>
+          <div>
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              <Wallet className="h-5 w-5 text-emerald-600" /> Área Financeira
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Total de pedidos recebidos e desempenho financeiro
+            </p>
+          </div>
+
           <SupplierKPIs supplierId={myProfile.id} />
 
           <SupplierFinancialSummary supplierId={myProfile.id} />
+
+          <SupplierLeadTimeCard supplier={myProfile} onUpdated={loadData} />
 
           <Card className="border-emerald-200 bg-emerald-50/50">
             <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-6">

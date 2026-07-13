@@ -12,6 +12,7 @@ import {
   Truck,
   ClipboardList,
   BookOpen,
+  Users,
 } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 
@@ -43,6 +44,7 @@ const restaurantNav = [
 const supplierNav = [
   { title: 'Dashboard', url: '/supplier/dashboard', icon: LayoutDashboard },
   { title: 'Pedidos', url: '/supplier/pedidos', icon: ClipboardList },
+  { title: 'Meus Clientes', url: '/supplier/clientes', icon: Users },
 ]
 
 export function AppSidebar() {
