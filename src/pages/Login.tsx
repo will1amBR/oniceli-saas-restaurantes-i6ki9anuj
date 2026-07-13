@@ -54,12 +54,12 @@ export default function Login() {
     }
   }
 
-  const demoLogin = async (demoEmail: string) => {
+  const demoLogin = async (demoEmail: string, demoPassword: string = 'Skip@Pass') => {
     setError('')
     setLoading(true)
     setEmail(demoEmail)
-    setPassword('Skip@Pass')
-    const result = await signIn(demoEmail, 'Skip@Pass')
+    setPassword(demoPassword)
+    const result = await signIn(demoEmail, demoPassword)
     if (result.error) {
       setError(getErrorMessage(result.error))
       setLoading(false)
@@ -142,6 +142,15 @@ export default function Login() {
           {!isSignUp && (
             <div className="mt-4 pt-4 border-t">
               <p className="text-xs text-center text-muted-foreground mb-3">Acesso demo rápido:</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => demoLogin('serena@teste.com.br', 'teste')}
+                disabled={loading}
+                className="w-full gap-1.5 mb-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+              >
+                <ChefHat className="h-3.5 w-3.5" /> Serena Café (Demo)
+              </Button>
               <div className="grid grid-cols-2 gap-2">
                 <Button
                   variant="outline"

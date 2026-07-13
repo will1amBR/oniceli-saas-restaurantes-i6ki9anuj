@@ -165,9 +165,8 @@ export default function Purchases() {
                             <Package className="h-4 w-4 text-emerald-600" />
                             <span className="font-medium">{supplierName}</span>
                             <Badge
-                              variant="secondary"
                               className={cn(
-                                'text-xs px-2.5 py-0.5 inline-flex items-center justify-center whitespace-nowrap rounded-full text-center',
+                                'inline-flex items-center justify-center whitespace-nowrap text-xs font-medium px-2.5 py-1 rounded-full leading-none border-transparent',
                                 config.className,
                               )}
                             >
@@ -240,9 +239,8 @@ export default function Purchases() {
                     <div className="flex justify-between items-start mb-2">
                       <span className="font-medium text-sm">{supplierName}</span>
                       <Badge
-                        variant="outline"
                         className={cn(
-                          'text-xs px-2.5 py-0.5 inline-flex items-center justify-center whitespace-nowrap rounded-full text-center',
+                          'inline-flex items-center justify-center whitespace-nowrap text-xs font-medium px-2.5 py-1 rounded-full leading-none border-transparent',
                           config.className,
                         )}
                       >

@@ -173,33 +173,30 @@ export default function Recipes() {
                 </div>
               </CardContent>
               <CardFooter className="pt-0 border-t mt-4 p-4">
-                <div className="flex items-center gap-1.5 w-full">
+                <div className="flex items-center gap-1 w-full">
                   <Button
                     variant="outline"
-                    size="sm"
-                    className="flex-1 gap-1 text-xs h-9 justify-center"
+                    className="flex-1 min-w-0 gap-1 text-xs h-8 px-2 justify-center overflow-hidden"
                     onClick={() => openDetail(recipe)}
                   >
                     <Eye className="h-3.5 w-3.5 shrink-0" />
-                    <span>Ficha</span>
+                    <span className="truncate">Ficha</span>
                   </Button>
                   <Button
                     variant="outline"
-                    size="sm"
-                    className="flex-1 gap-1 text-xs h-9 justify-center"
+                    className="flex-1 min-w-0 gap-1 text-xs h-8 px-2 justify-center overflow-hidden"
                     onClick={() => openEdit(recipe)}
                   >
                     <Edit className="h-3.5 w-3.5 shrink-0" />
-                    <span>Editar</span>
+                    <span className="truncate">Editar</span>
                   </Button>
                   <Button
                     variant="outline"
-                    size="sm"
-                    className="flex-1 gap-1 text-xs h-9 justify-center text-red-600 hover:text-red-700"
+                    className="flex-1 min-w-0 gap-1 text-xs h-8 px-2 justify-center overflow-hidden text-red-600 hover:text-red-700"
                     onClick={() => handleDelete(recipe.id)}
                   >
                     <Trash2 className="h-3.5 w-3.5 shrink-0" />
-                    <span>Excluir</span>
+                    <span className="truncate">Excluir</span>
                   </Button>
                 </div>
               </CardFooter>
