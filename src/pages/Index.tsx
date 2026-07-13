@@ -55,6 +55,10 @@ export default function Index() {
   useRealtime('sales_data', () => loadData())
   useRealtime('waste_logs', () => loadData())
 
+  const topMenuItems = useMemo(() => {
+    return [...menuItems].slice(0, 5)
+  }, [menuItems])
+
   if (user?.role === 'supplier') return <Navigate to="/supplier/dashboard" replace />
 
   const stockValue = inventory.reduce((s, i) => s + i.quantity * i.unit_cost, 0)
@@ -88,10 +92,6 @@ export default function Index() {
       color: 'text-amber-500',
     },
   ]
-
-  const topMenuItems = useMemo(() => {
-    return [...menuItems].slice(0, 5)
-  }, [menuItems])
 
   return (
     <div className="space-y-6">
