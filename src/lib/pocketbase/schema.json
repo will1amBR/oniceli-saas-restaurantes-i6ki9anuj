@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-13T00:50:37.074Z",
+  "generatedAt": "2026-07-13T01:06:45.606Z",
   "collections": [
     {
       "name": "users",
@@ -137,6 +137,24 @@
           "required": false,
           "system": false,
           "collectionRef": "users"
+        },
+        {
+          "name": "bank_account_info",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "tax_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "pix_key",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
@@ -602,6 +620,31 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "payment_method",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["pix", "card", "installments"]
+        },
+        {
+          "name": "payment_terms",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "interest_applied",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "interest_rate",
+          "type": "number",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [

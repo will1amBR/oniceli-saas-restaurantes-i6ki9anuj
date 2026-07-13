@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Navigate } from 'react-router-dom'
-import { ClipboardList, Loader2, Package, Calendar, DollarSign } from 'lucide-react'
+import { ClipboardList, Loader2, Package, Calendar, DollarSign, CreditCard } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -14,9 +14,15 @@ import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
 import { useRealtime } from '@/hooks/use-realtime'
 import { getSuppliers } from '@/services/suppliers'
-import { getOrdersForSupplier, updateOrderStatus, type Order } from '@/services/orders'
+import { getOrdersForSupplier, updateOrderStatus, updateOrder, type Order } from '@/services/orders'
 import { getErrorMessage } from '@/lib/pocketbase/errors'
 import { cn } from '@/lib/utils'
+
+const paymentLabels: Record<string, string> = {
+  pix: 'Pix',
+  card: 'Cartão',
+  installments: 'Parcelado (30-60-90)',
+}
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   pending: { label: 'Pendente', className: 'bg-amber-500 hover:bg-amber-600 text-white' },
@@ -59,6 +65,22 @@ export default function SupplierOrders() {
     try {
       await updateOrderStatus(orderId, status)
       toast({ title: 'Status atualizado!' })
+      loadData()
+    } catch (err) {
+      toast({ title: 'Erro', description: getErrorMessage(err), variant: 'destructive' })
+    }
+  }
+
+  const handlePaymentMethodChange = async (orderId: string, method: string) => {
+    const isInstallments = method === 'installments'
+    try {
+      await updateOrder(orderId, {
+        payment_method: method,
+        payment_terms: isInstallments ? '30/60/90' : '',
+        interest_applied: isInstallments,
+        interest_rate: isInstallments ? 5 : 0,
+      })
+      toast({ title: 'Pagamento atualizado!' })
       loadData()
     } catch (err) {
       toast({ title: 'Erro', description: getErrorMessage(err), variant: 'destructive' })
@@ -124,6 +146,13 @@ export default function SupplierOrders() {
                             minimumFractionDigits: 2,
                           })}
                         </span>
+                        {order.payment_method && (
+                          <span className="flex items-center gap-1">
+                            <CreditCard className="h-3 w-3" />
+                            {paymentLabels[order.payment_method] || order.payment_method}
+                            {order.interest_applied ? ' • Com juros' : ' • Sem juros'}
+                          </span>
+                        )}
                       </CardDescription>
                     </div>
                     <Badge className={cn(config.className)}>{config.label}</Badge>
@@ -162,6 +191,28 @@ export default function SupplierOrders() {
                         <SelectItem value="cancelled">Cancelado</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div className="flex items-center gap-2 pt-1">
+                    <span className="text-sm text-muted-foreground">Forma de pagamento:</span>
+                    <Select
+                      value={order.payment_method || 'none'}
+                      onValueChange={(v) => handlePaymentMethodChange(order.id, v)}
+                    >
+                      <SelectTrigger className="w-52">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Não definido</SelectItem>
+                        <SelectItem value="pix">Pix</SelectItem>
+                        <SelectItem value="card">Cartão</SelectItem>
+                        <SelectItem value="installments">Parcelado (30-60-90)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {order.interest_applied && (
+                      <Badge variant="outline" className="text-amber-600 border-amber-300">
+                        Com juros ({order.interest_rate || 0}%)
+                      </Badge>
+                    )}
                   </div>
                 </CardContent>
               </Card>

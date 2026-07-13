@@ -14,6 +14,10 @@ export interface Order {
   items: string
   total_amount: number
   status: string
+  payment_method: string
+  payment_terms: string
+  interest_applied: boolean
+  interest_rate: number
   created: string
   updated: string
   expand?: {
@@ -40,5 +44,8 @@ export const createOrder = (data: Partial<Order>) => pb.collection('orders').cre
 
 export const updateOrderStatus = (id: string, status: string) =>
   pb.collection('orders').update(id, { status })
+
+export const updateOrder = (id: string, data: Partial<Order>) =>
+  pb.collection('orders').update(id, data)
 
 export const deleteOrder = (id: string) => pb.collection('orders').delete(id)
