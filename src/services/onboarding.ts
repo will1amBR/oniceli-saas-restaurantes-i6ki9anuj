@@ -44,6 +44,7 @@ export async function persistOnboardingData(userId: string): Promise<void> {
       delivery_lead_time: parseInt(q.deliveryLeadTime) || 3,
       rating: 0,
       status: 'active',
+      user_id: userId,
     })
     await pb.collection('users').update(userId, {
       name: q.name || 'Novo Fornecedor',
