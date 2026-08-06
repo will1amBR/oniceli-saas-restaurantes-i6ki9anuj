@@ -24,7 +24,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
 import { createMenuItem, updateMenuItem, type MenuItem } from '@/services/menu-items'
 import type { InventoryItem } from '@/services/inventory'
-import { getErrorMessage } from '@/lib/pocketbase/errors'
+import { extractFieldErrors, getErrorMessage, type FieldErrors } from '@/lib/pocketbase/errors'
 
 export interface RecipeIngredient {
   inventory_id: string
@@ -33,6 +33,14 @@ export interface RecipeIngredient {
   unit: string
   unit_cost: number
 }
+
+const UNIT_OPTIONS = [
+  { value: 'un', label: 'Unidade' },
+  { value: 'kg', label: 'Quilograma (kg)' },
+  { value: 'g', label: 'Grama (g)' },
+  { value: 'ml', label: 'Mililitro (ml)' },
+  { value: 'L', label: 'Litro (L)' },
+]
 
 interface RecipeFormDialogProps {
   open: boolean
@@ -58,10 +66,15 @@ export function RecipeFormDialog({
   const [margin, setMargin] = useState(65)
   const [selectedInvId, setSelectedInvId] = useState('')
   const [quantity, setQuantity] = useState('')
+  const [selectedUnit, setSelectedUnit] = useState('un')
   const [saving, setSaving] = useState(false)
+  const [errors, setErrors] = useState<FieldErrors>({})
+  const [ingError, setIngError] = useState('')
 
   useEffect(() => {
     if (!open) return
+    setErrors({})
+    setIngError('')
     if (menuItem) {
       setName(menuItem.name)
       setCategory(menuItem.category || '')
@@ -76,7 +89,7 @@ export function RecipeFormDialog({
               inventory_id: ing.inventory_id,
               name: ing.name || inv?.name || 'Desconhecido',
               quantity: ing.quantity || 0,
-              unit: ing.unit || inv?.unit || '',
+              unit: ing.unit || inv?.unit || 'un',
               unit_cost: inv?.unit_cost || 0,
             }
           }),
@@ -93,42 +106,64 @@ export function RecipeFormDialog({
     }
     setSelectedInvId('')
     setQuantity('')
+    setSelectedUnit('un')
   }, [open, menuItem])
 
   const totalCost = useMemo(
     () => ingredients.reduce((sum, ing) => sum + ing.quantity * ing.unit_cost, 0),
     [ingredients],
   )
-
   const suggestedPrice = useMemo(() => {
     const m = Math.min(Math.max(margin, 0), 99)
     return totalCost > 0 ? totalCost / (1 - m / 100) : 0
   }, [totalCost, margin])
 
+  const handleInvSelect = (id: string) => {
+    setSelectedInvId(id)
+    setIngError('')
+    const inv = inventoryItems.find((i) => i.id === id)
+    if (inv) setSelectedUnit(inv.unit || 'un')
+  }
+
   const addIngredient = () => {
+    if (!selectedInvId) {
+      setIngError('Selecione um ingrediente')
+      return
+    }
+    const qty = parseFloat(quantity)
+    if (!quantity || isNaN(qty) || qty <= 0) {
+      setIngError('Informe uma quantidade válida maior que zero')
+      return
+    }
+    if (!selectedUnit) {
+      setIngError('Selecione uma unidade de medida')
+      return
+    }
     const inv = inventoryItems.find((i) => i.id === selectedInvId)
-    if (!inv || !quantity) return
+    if (!inv) return
     setIngredients([
       ...ingredients,
       {
         inventory_id: inv.id,
         name: inv.name,
-        quantity: parseFloat(quantity),
-        unit: inv.unit,
+        quantity: qty,
+        unit: selectedUnit,
         unit_cost: inv.unit_cost,
       },
     ])
     setSelectedInvId('')
     setQuantity('')
+    setSelectedUnit('un')
+    setIngError('')
   }
 
   const removeIngredient = (idx: number) => setIngredients(ingredients.filter((_, i) => i !== idx))
 
   const handleSave = async () => {
-    if (!name.trim()) {
-      toast({ title: 'Nome é obrigatório', variant: 'destructive' })
-      return
-    }
+    const fieldErrors: FieldErrors = {}
+    if (!name.trim()) fieldErrors.name = 'Nome do prato é obrigatório'
+    setErrors(fieldErrors)
+    if (Object.keys(fieldErrors).length > 0) return
     setSaving(true)
     try {
       const ingredientsJson = JSON.stringify(
@@ -159,6 +194,7 @@ export function RecipeFormDialog({
       onSaved()
       onOpenChange(false)
     } catch (err) {
+      setErrors(extractFieldErrors(err))
       toast({ title: 'Erro', description: getErrorMessage(err), variant: 'destructive' })
     } finally {
       setSaving(false)
@@ -182,8 +218,8 @@ export function RecipeFormDialog({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Ex: Arroz de Pato"
-                required
               />
+              {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
             </div>
             <div className="space-y-1.5">
               <Label>Categoria</Label>
@@ -204,35 +240,59 @@ export function RecipeFormDialog({
             {inventoryItems.length === 0 ? (
               <p className="text-sm text-muted-foreground">Adicione itens ao estoque primeiro.</p>
             ) : (
-              <div className="flex gap-2">
-                <Select value={selectedInvId} onValueChange={setSelectedInvId}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Selecione um ingrediente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {inventoryItems.map((inv) => (
-                      <SelectItem key={inv.id} value={inv.id}>
-                        {inv.name} ({inv.unit}) — R$ {inv.unit_cost}/{inv.unit}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Input
-                  type="number"
-                  className="w-24"
-                  placeholder="Qtd"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      addIngredient()
-                    }
-                  }}
-                />
-                <Button type="button" size="icon" onClick={addIngredient}>
-                  <Plus className="h-4 w-4" />
-                </Button>
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <Select value={selectedInvId} onValueChange={handleInvSelect}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Selecione um ingrediente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {inventoryItems.map((inv) => (
+                        <SelectItem key={inv.id} value={inv.id}>
+                          {inv.name} — R$ {inv.unit_cost}/{inv.unit}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="number"
+                    className="w-24"
+                    placeholder="Qtd"
+                    value={quantity}
+                    onChange={(e) => {
+                      setQuantity(e.target.value)
+                      setIngError('')
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        addIngredient()
+                      }
+                    }}
+                  />
+                  <Select
+                    value={selectedUnit}
+                    onValueChange={(v) => {
+                      setSelectedUnit(v)
+                      setIngError('')
+                    }}
+                  >
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {UNIT_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button type="button" size="icon" onClick={addIngredient}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                {ingError && <p className="text-sm text-red-500">{ingError}</p>}
               </div>
             )}
             <div className="space-y-1.5 max-h-40 overflow-y-auto">
