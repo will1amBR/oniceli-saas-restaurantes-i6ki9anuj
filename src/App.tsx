@@ -19,6 +19,7 @@ import Purchases from './pages/Purchases'
 import Financial from './pages/Financial'
 import Suppliers from './pages/Suppliers'
 import Settings from './pages/Settings'
+import Users from './pages/Users'
 import SupplierDashboard from './pages/SupplierDashboard'
 import SupplierOrders from './pages/SupplierOrders'
 import SupplierClients from './pages/SupplierClients'
@@ -78,6 +79,7 @@ const App = () => (
               <Route path="/compras" element={<Purchases />} />
               <Route path="/fornecedores" element={<Suppliers />} />
               <Route path="/financeiro" element={<Financial />} />
+              <Route path="/usuarios" element={<Users />} />
               <Route path="/configuracoes" element={<Settings />} />
               <Route path="/supplier/dashboard" element={<SupplierDashboard />} />
               <Route path="/supplier/pedidos" element={<SupplierOrders />} />

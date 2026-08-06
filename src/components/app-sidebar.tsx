@@ -13,6 +13,7 @@ import {
   ClipboardList,
   BookOpen,
   Users,
+  UserCog,
 } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 
@@ -89,6 +90,14 @@ export function AppSidebar() {
             <SidebarGroupLabel>Administração</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location.pathname === '/usuarios'}>
+                    <Link to="/usuarios">
+                      <UserCog />
+                      <span>Usuários</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={location.pathname === '/configuracoes'}>
                     <Link to="/configuracoes">
