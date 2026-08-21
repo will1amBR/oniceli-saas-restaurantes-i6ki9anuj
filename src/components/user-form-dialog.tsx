@@ -135,6 +135,7 @@ export function UserFormDialog({ open, onOpenChange, editUser, onSaved }: Props)
                 <SelectContent>
                   <SelectItem value="restaurant">Restaurante (Administrador)</SelectItem>
                   <SelectItem value="kitchen">Cozinha (KDS / Preparo)</SelectItem>
+                  <SelectItem value="bar">Bar (Drinks & Doses)</SelectItem>
                   <SelectItem value="waiter">Garçom (Comandas & Salão)</SelectItem>
                   <SelectItem value="supplier">Fornecedor</SelectItem>
                 </SelectContent>

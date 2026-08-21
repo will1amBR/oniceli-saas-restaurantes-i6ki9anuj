@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-21T04:19:37.073Z",
+  "generatedAt": "2026-08-21T05:19:38.423Z",
   "collections": [
     {
       "name": "users",
@@ -43,7 +43,7 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["restaurant", "supplier", "kitchen", "waiter"]
+          "selectValues": ["restaurant", "supplier", "kitchen", "waiter", "bar"]
         },
         {
           "name": "restaurant_id",
@@ -350,6 +350,24 @@
           "required": false,
           "system": false,
           "collectionRef": "users"
+        },
+        {
+          "name": "volume_total_ml",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "dose_padrao_ml",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "real_stock_ml",
+          "type": "number",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
@@ -747,6 +765,95 @@
         "CREATE INDEX idx_korders_restaurant ON kitchen_orders (restaurant_id)",
         "CREATE INDEX idx_korders_status ON kitchen_orders (status)",
         "CREATE INDEX idx_korders_created ON kitchen_orders (created)"
+      ]
+    },
+    {
+      "name": "bar_orders",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "restaurant_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "waiter_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "table_number",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "customer_name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "items",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["pending", "preparing", "ready", "delivered", "cancelled"]
+        },
+        {
+          "name": "total_amount",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "stock_deducted",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_barorders_restaurant ON bar_orders (restaurant_id)",
+        "CREATE INDEX idx_barorders_status ON bar_orders (status)",
+        "CREATE INDEX idx_barorders_created ON bar_orders (created)"
       ]
     }
   ]

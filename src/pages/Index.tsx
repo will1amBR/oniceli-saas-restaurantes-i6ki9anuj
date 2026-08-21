@@ -18,6 +18,10 @@ import { getSales, type SaleRecord } from '@/services/sales'
 import { getWasteLogs, type WasteLog } from '@/services/waste-logs'
 import { getMenuItems, type MenuItem } from '@/services/menu-items'
 import { StatusBadge } from '@/components/status-badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { DoseReportPanel } from '@/components/dose-report-panel'
+import { RestaurantAbcCurve } from '@/components/restaurant-abc-curve'
+import { Wine, PieChart } from 'lucide-react'
 
 export default function Index() {
   const { user } = useAuth()
@@ -176,7 +180,7 @@ export default function Index() {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
             <BookOpen className="h-5 w-5 text-primary" />
-            Pratos do Cardápio
+            Pratos e Drinks do Cardápio
           </CardTitle>
           <Button variant="ghost" size="sm" asChild className="text-primary">
             <Link to="/cardapios">
@@ -216,6 +220,33 @@ export default function Index() {
           )}
         </CardContent>
       </Card>
+
+      {/* New Analytics Tabs: Curva ABC de Consumo & Relatório de Doses (ML) */}
+      <div className="space-y-4 pt-2">
+        <Tabs defaultValue="abc" className="w-full">
+          <TabsList className="grid grid-cols-2 max-w-md">
+            <TabsTrigger value="abc" className="gap-1.5">
+              <PieChart className="h-4 w-4" /> Curva ABC & Desvios
+            </TabsTrigger>
+            <TabsTrigger value="doses" className="gap-1.5">
+              <Wine className="h-4 w-4" /> Relatório de Doses (Bar)
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="abc" className="pt-4">
+            <RestaurantAbcCurve inventory={inventory} sales={sales} menuItems={menuItems} />
+          </TabsContent>
+
+          <TabsContent value="doses" className="pt-4">
+            <DoseReportPanel
+              inventory={inventory}
+              sales={sales}
+              menuItems={menuItems}
+              onRefresh={loadData}
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   )
 }

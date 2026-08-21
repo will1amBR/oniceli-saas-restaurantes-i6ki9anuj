@@ -14,6 +14,7 @@ import {
   BookOpen,
   Users,
   UserCog,
+  Wine,
 } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 
@@ -33,11 +34,12 @@ import { Button } from '@/components/ui/button'
 
 const restaurantNav = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
-  { title: 'Cardápio', url: '/cardapios', icon: BookOpen },
-  { title: 'Estoque', url: '/estoque', icon: Package },
-  { title: 'Receitas', url: '/receitas', icon: UtensilsCrossed },
-  { title: 'Comandas (Salão)', url: '/garcom', icon: ClipboardList },
+  { title: 'Cardápio & Receitas', url: '/cardapios', icon: BookOpen },
+  { title: 'Estoque & Doses', url: '/estoque', icon: Package },
+  { title: 'Fichas Técnicas', url: '/receitas', icon: UtensilsCrossed },
+  { title: 'Comandas (Garçom)', url: '/garcom', icon: ClipboardList },
   { title: 'Cozinha (KDS)', url: '/cozinha', icon: ChefHat },
+  { title: 'Bar & Doses', url: '/bar', icon: Wine },
   { title: 'Vendas', url: '/vendas', icon: TrendingUp },
   { title: 'Compras', url: '/compras', icon: ShoppingCart },
   { title: 'Fornecedores', url: '/fornecedores', icon: Truck },
@@ -50,10 +52,17 @@ const kitchenNav = [
   { title: 'Estoque', url: '/estoque', icon: Package },
 ]
 
+const barNav = [
+  { title: 'Bar (KDS & Doses)', url: '/bar', icon: Wine },
+  { title: 'Cardápio de Drinks', url: '/cardapios', icon: BookOpen },
+  { title: 'Estoque de Bebidas', url: '/estoque', icon: Package },
+]
+
 const waiterNav = [
-  { title: 'Comandas & Pedidos', url: '/garcom', icon: ClipboardList },
+  { title: 'Comandas (Cozinha & Bar)', url: '/garcom', icon: ClipboardList },
   { title: 'Cardápio', url: '/cardapios', icon: BookOpen },
   { title: 'Status Cozinha', url: '/cozinha', icon: ChefHat },
+  { title: 'Status Bar', url: '/bar', icon: Wine },
 ]
 
 const supplierNav = [
@@ -70,10 +79,11 @@ export function AppSidebar() {
   let mainNav = restaurantNav
   if (role === 'supplier') mainNav = supplierNav
   else if (role === 'kitchen') mainNav = kitchenNav
+  else if (role === 'bar') mainNav = barNav
   else if (role === 'waiter') mainNav = waiterNav
 
   const isSupplier = role === 'supplier'
-  const isStaff = role === 'kitchen' || role === 'waiter'
+  const isStaff = role === 'kitchen' || role === 'bar' || role === 'waiter'
 
   return (
     <Sidebar>
@@ -84,9 +94,11 @@ export function AppSidebar() {
               ? '/supplier/dashboard'
               : role === 'kitchen'
                 ? '/cozinha'
-                : role === 'waiter'
-                  ? '/garcom'
-                  : '/dashboard'
+                : role === 'bar'
+                  ? '/bar'
+                  : role === 'waiter'
+                    ? '/garcom'
+                    : '/dashboard'
           }
           className="flex items-center gap-2 font-bold text-xl text-primary w-full truncate"
         >
@@ -155,7 +167,9 @@ export function AppSidebar() {
                   ? '/garcom'
                   : role === 'kitchen'
                     ? '/cozinha'
-                    : '/receitas'
+                    : role === 'bar'
+                      ? '/bar'
+                      : '/receitas'
             }
           >
             <PlusCircle className="h-4 w-4" />
@@ -164,8 +178,10 @@ export function AppSidebar() {
               : role === 'waiter'
                 ? 'Nova Comanda'
                 : role === 'kitchen'
-                  ? 'Fila de Pedidos'
-                  : 'Nova Receita'}
+                  ? 'Fila da Cozinha'
+                  : role === 'bar'
+                    ? 'Fila do Bar'
+                    : 'Nova Receita'}
           </Link>
         </Button>
       </SidebarFooter>

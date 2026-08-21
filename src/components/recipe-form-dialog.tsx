@@ -250,6 +250,7 @@ export function RecipeFormDialog({
                       {inventoryItems.map((inv) => (
                         <SelectItem key={inv.id} value={inv.id}>
                           {inv.name} — R$ {inv.unit_cost}/{inv.unit}
+                          {inv.dose_padrao_ml ? ` (Dose: ${inv.dose_padrao_ml}ml)` : ''}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -292,6 +293,47 @@ export function RecipeFormDialog({
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
+                {/* Dose helper quick buttons if liquid */}
+                {selectedInvId &&
+                  inventoryItems.find((i) => i.id === selectedInvId)?.dose_padrao_ml && (
+                    <div className="flex items-center gap-2 pt-1">
+                      <span className="text-[11px] text-muted-foreground">Sugestão de Dose:</span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-6 text-[11px] px-2"
+                        onClick={() => {
+                          const inv = inventoryItems.find((i) => i.id === selectedInvId)
+                          if (inv?.dose_padrao_ml) {
+                            setQuantity(String(inv.dose_padrao_ml))
+                            setSelectedUnit('ml')
+                          }
+                        }}
+                      >
+                        1 Dose ({inventoryItems.find((i) => i.id === selectedInvId)?.dose_padrao_ml}
+                        ml)
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-6 text-[11px] px-2"
+                        onClick={() => {
+                          const inv = inventoryItems.find((i) => i.id === selectedInvId)
+                          if (inv?.dose_padrao_ml) {
+                            setQuantity(String(inv.dose_padrao_ml * 2))
+                            setSelectedUnit('ml')
+                          }
+                        }}
+                      >
+                        Dose Dupla (
+                        {(inventoryItems.find((i) => i.id === selectedInvId)?.dose_padrao_ml ||
+                          50) * 2}
+                        ml)
+                      </Button>
+                    </div>
+                  )}
                 {ingError && <p className="text-sm text-red-500">{ingError}</p>}
               </div>
             )}

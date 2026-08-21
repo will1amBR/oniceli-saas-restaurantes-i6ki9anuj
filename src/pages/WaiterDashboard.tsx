@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   Utensils,
   Plus,
@@ -8,18 +8,14 @@ import {
   Search,
   CheckCircle2,
   Clock,
-  UserCheck,
-  AlertCircle,
+  Wine,
+  ChefHat,
+  Bell,
+  Sparkles,
   ReceiptText,
+  Volume2,
 } from 'lucide-react'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardFooter,
-} from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -36,14 +32,24 @@ import {
   type KitchenOrder,
   type KitchenOrderItem,
 } from '@/services/kitchen-orders'
+import {
+  createBarOrder,
+  getBarOrders,
+  type BarOrder,
+  type BarOrderItem,
+} from '@/services/bar-orders'
 import { getErrorMessage } from '@/lib/pocketbase/errors'
 
 export default function WaiterDashboard() {
   const { user } = useAuth()
   const { toast } = useToast()
 
+  // Destination mode: kitchen vs bar
+  const [destination, setDestination] = useState<'kitchen' | 'bar'>('kitchen')
+
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
-  const [recentOrders, setRecentOrders] = useState<KitchenOrder[]>([])
+  const [recentKitchenOrders, setRecentKitchenOrders] = useState<KitchenOrder[]>([])
+  const [recentBarOrders, setRecentBarOrders] = useState<BarOrder[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
 
@@ -57,41 +63,177 @@ export default function WaiterDashboard() {
     { item: MenuItem; quantity: number; notes?: string }[]
   >([])
 
+  // Store previous statuses to detect real-time status transitions and alert the waiter
+  const prevKitchenStatusRef = useRef<Record<string, string>>({})
+  const prevBarStatusRef = useRef<Record<string, string>>({})
+  const isInitialLoadRef = useRef(true)
+
+  // Sound effect generator for real-time notifications
+  const playNotificationSound = (type: 'ready' | 'preparing') => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
+      if (!AudioCtx) return
+      const ctx = new AudioCtx()
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+
+      if (type === 'ready') {
+        // High upbeat dual chime
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime) // D5
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15) // A5
+        gain.gain.setValueAtTime(0.2, ctx.currentTime)
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4)
+        osc.start(ctx.currentTime)
+        osc.stop(ctx.currentTime + 0.4)
+      } else {
+        // Soft double beep for preparing
+        osc.frequency.setValueAtTime(440, ctx.currentTime) // A4
+        gain.gain.setValueAtTime(0.1, ctx.currentTime)
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25)
+        osc.start(ctx.currentTime)
+        osc.stop(ctx.currentTime + 0.25)
+      }
+    } catch {
+      /* ignore audio errors */
+    }
+  }
+
   // Resolve restaurant ID
   const restaurantId = user?.restaurant_id || (user?.role === 'restaurant' ? user.id : '')
 
   const loadData = useCallback(async () => {
     try {
-      const [items, orders] = await Promise.all([
+      const [items, kOrders, bOrders] = await Promise.all([
         getMenuItems(restaurantId || undefined),
         getKitchenOrders(restaurantId || undefined),
+        getBarOrders(restaurantId || undefined),
       ])
       setMenuItems(items.filter((i) => i.active !== false))
-      setRecentOrders(orders.slice(0, 15))
+
+      // Check transitions for kitchen orders
+      if (!isInitialLoadRef.current) {
+        kOrders.forEach((order) => {
+          const prevStatus = prevKitchenStatusRef.current[order.id]
+          if (prevStatus && prevStatus !== order.status) {
+            if (order.status === 'ready') {
+              playNotificationSound('ready')
+              toast({
+                title: '🍽️ Prato Pronto para Retirar!',
+                description: `Mesa ${order.table_number}: O pedido da cozinha foi finalizado e está pronto para servir.`,
+                className: 'bg-emerald-600 text-white font-bold border-none shadow-xl',
+                duration: 6000,
+              })
+            } else if (order.status === 'preparing') {
+              playNotificationSound('preparing')
+              toast({
+                title: '👨‍🍳 Cozinha iniciou o preparo',
+                description: `Mesa ${order.table_number}: A cozinha começou a preparar o pedido.`,
+                className: 'bg-blue-600 text-white font-medium border-none shadow-md',
+                duration: 4000,
+              })
+            }
+          }
+        })
+
+        // Check transitions for bar orders
+        bOrders.forEach((order) => {
+          const prevStatus = prevBarStatusRef.current[order.id]
+          if (prevStatus && prevStatus !== order.status) {
+            if (order.status === 'ready') {
+              playNotificationSound('ready')
+              toast({
+                title: '🍸 Drink Pronto no Balcão!',
+                description: `Mesa ${order.table_number}: O pedido do bar está pronto para retirar.`,
+                className: 'bg-indigo-600 text-white font-bold border-none shadow-xl',
+                duration: 6000,
+              })
+            } else if (order.status === 'preparing') {
+              playNotificationSound('preparing')
+              toast({
+                title: '🍹 Barman preparando bebidas',
+                description: `Mesa ${order.table_number}: O bartender iniciou o preparo dos drinks.`,
+                className: 'bg-purple-600 text-white font-medium border-none shadow-md',
+                duration: 4000,
+              })
+            }
+          }
+        })
+      }
+
+      // Update refs
+      const newKitchenStatus: Record<string, string> = {}
+      kOrders.forEach((o) => (newKitchenStatus[o.id] = o.status))
+      prevKitchenStatusRef.current = newKitchenStatus
+
+      const newBarStatus: Record<string, string> = {}
+      bOrders.forEach((o) => (newBarStatus[o.id] = o.status))
+      prevBarStatusRef.current = newBarStatus
+
+      isInitialLoadRef.current = false
+      setRecentKitchenOrders(kOrders.slice(0, 15))
+      setRecentBarOrders(bOrders.slice(0, 15))
     } catch {
       /* ignore */
     } finally {
       setLoading(false)
     }
-  }, [restaurantId])
+  }, [restaurantId, toast])
 
   useEffect(() => {
     loadData()
   }, [loadData])
 
+  // Realtime subscriptions
   useRealtime('kitchen_orders', () => loadData())
+  useRealtime('bar_orders', () => loadData())
   useRealtime('menu_items', () => loadData())
+
+  // Categories helper: If in 'bar' mode, only show beverage-related categories
+  const isBeverageCategory = (catName: string = '') => {
+    const c = catName.toLowerCase()
+    return (
+      c.includes('bebid') ||
+      c.includes('drink') ||
+      c.includes('coquet') ||
+      c.includes('dose') ||
+      c.includes('alco') ||
+      c.includes('álco') ||
+      c.includes('suco') ||
+      c.includes('soft') ||
+      c.includes('smoothie') ||
+      c.includes('bar') ||
+      c.includes('vinho') ||
+      c.includes('cerveja')
+    )
+  }
+
+  const destinationFilteredItems = useMemo(() => {
+    if (destination === 'bar') {
+      return menuItems.filter((item) => isBeverageCategory(item.category))
+    }
+    // Kitchen mode: show food or all except strictly pure alcoholic doses/cocktails if separated
+    return menuItems
+  }, [menuItems, destination])
 
   const categories = useMemo(() => {
     const set = new Set<string>()
-    menuItems.forEach((item) => {
+    destinationFilteredItems.forEach((item) => {
       if (item.category) set.add(item.category)
     })
     return ['all', ...Array.from(set)]
-  }, [menuItems])
+  }, [destinationFilteredItems])
+
+  // Reset category if selected category is not in destination categories
+  useEffect(() => {
+    if (selectedCategory !== 'all' && !categories.includes(selectedCategory)) {
+      setSelectedCategory('all')
+    }
+  }, [categories, selectedCategory])
 
   const filteredItems = useMemo(() => {
-    return menuItems.filter((item) => {
+    return destinationFilteredItems.filter((item) => {
       const matchesCat = selectedCategory === 'all' || item.category === selectedCategory
       const matchesSearch =
         !searchQuery ||
@@ -99,7 +241,7 @@ export default function WaiterDashboard() {
         (item.category && item.category.toLowerCase().includes(searchQuery.toLowerCase()))
       return matchesCat && matchesSearch
     })
-  }, [menuItems, selectedCategory, searchQuery])
+  }, [destinationFilteredItems, selectedCategory, searchQuery])
 
   const addItemToOrder = (item: MenuItem) => {
     setOrderItems((prev) => {
@@ -137,7 +279,7 @@ export default function WaiterDashboard() {
     return orderItems.reduce((acc, curr) => acc + (curr.item.price || 0) * curr.quantity, 0)
   }, [orderItems])
 
-  const handleSendToKitchen = async () => {
+  const handleSendOrder = async () => {
     if (!tableNumber.trim()) {
       toast({
         title: 'Mesa/Comanda obrigatória',
@@ -150,7 +292,7 @@ export default function WaiterDashboard() {
     if (orderItems.length === 0) {
       toast({
         title: 'Pedido vazio',
-        description: 'Selecione ao menos um item do cardápio para enviar.',
+        description: `Selecione ao menos um item do cardápio para enviar ao ${destination === 'bar' ? 'Bar' : 'Cozinha'}.`,
         variant: 'destructive',
       })
       return
@@ -158,7 +300,7 @@ export default function WaiterDashboard() {
 
     setSubmitting(true)
     try {
-      const formattedItems: KitchenOrderItem[] = orderItems.map((o) => ({
+      const formattedItems = orderItems.map((o) => ({
         menu_item_id: o.item.id,
         name: o.item.name,
         price: o.item.price || 0,
@@ -166,22 +308,43 @@ export default function WaiterDashboard() {
         notes: o.notes || '',
       }))
 
-      await createKitchenOrder({
-        restaurant_id: restaurantId,
-        waiter_id: user?.id,
-        table_number: tableNumber.trim(),
-        customer_name: customerName.trim() || undefined,
-        items: JSON.stringify(formattedItems),
-        status: 'pending',
-        total_amount: totalAmount,
-        notes: notes.trim() || undefined,
-        stock_deducted: false,
-      })
+      if (destination === 'bar') {
+        await createBarOrder({
+          restaurant_id: restaurantId,
+          waiter_id: user?.id,
+          table_number: tableNumber.trim(),
+          customer_name: customerName.trim() || undefined,
+          items: JSON.stringify(formattedItems),
+          status: 'pending',
+          total_amount: totalAmount,
+          notes: notes.trim() || undefined,
+          stock_deducted: false,
+        })
 
-      toast({
-        title: 'Pedido enviado para a Cozinha!',
-        description: `Mesa ${tableNumber} · ${orderItems.length} itens enviados com sucesso.`,
-      })
+        toast({
+          title: '🍹 Pedido Enviado para o BAR!',
+          description: `Mesa ${tableNumber} · ${orderItems.length} bebidas enviadas para o display do Barman.`,
+          className: 'bg-indigo-600 text-white font-bold',
+        })
+      } else {
+        await createKitchenOrder({
+          restaurant_id: restaurantId,
+          waiter_id: user?.id,
+          table_number: tableNumber.trim(),
+          customer_name: customerName.trim() || undefined,
+          items: JSON.stringify(formattedItems),
+          status: 'pending',
+          total_amount: totalAmount,
+          notes: notes.trim() || undefined,
+          stock_deducted: false,
+        })
+
+        toast({
+          title: '🍽️ Pedido Enviado para a COZINHA!',
+          description: `Mesa ${tableNumber} · ${orderItems.length} pratos enviados para o display da Cozinha.`,
+          className: 'bg-emerald-600 text-white font-bold',
+        })
+      }
 
       // Reset form
       setTableNumber('')
@@ -200,6 +363,15 @@ export default function WaiterDashboard() {
     }
   }
 
+  // Combined orders sorted for the live status panel
+  const allRecentOrders = useMemo(() => {
+    const kList = recentKitchenOrders.map((o) => ({ ...o, orderType: 'kitchen' as const }))
+    const bList = recentBarOrders.map((o) => ({ ...o, orderType: 'bar' as const }))
+    return [...kList, ...bList].sort(
+      (a, b) => new Date(b.created).getTime() - new Date(a.created).getTime(),
+    )
+  }, [recentKitchenOrders, recentBarOrders])
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
@@ -212,15 +384,15 @@ export default function WaiterDashboard() {
         return (
           <Badge
             variant="outline"
-            className="bg-blue-50 text-blue-700 border-blue-300 gap-1 animate-pulse"
+            className="bg-blue-50 text-blue-700 border-blue-400 gap-1 animate-pulse font-semibold"
           >
             <Utensils className="h-3 w-3" /> Em Preparo
           </Badge>
         )
       case 'ready':
         return (
-          <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white gap-1">
-            <CheckCircle2 className="h-3 w-3" /> Pronto p/ Entrega
+          <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white gap-1.5 shadow-sm animate-bounce font-bold">
+            <Bell className="h-3.5 w-3.5" /> Pronto para retirar!
           </Badge>
         )
       case 'delivered':
@@ -240,16 +412,41 @@ export default function WaiterDashboard() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700">
+            <div className="p-2 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-700">
               <ReceiptText className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Comandas & Pedidos</h1>
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Comandas do Garçom</h1>
               <p className="text-sm text-muted-foreground">
-                Garçom: <strong className="text-foreground">{user?.name || user?.email}</strong>
+                Garçom: <strong className="text-foreground">{user?.name || user?.email}</strong> ·
+                Avisos sonoros e visuais em tempo real
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Cozinha / Bar Destination Selector Header */}
+        <div className="flex items-center p-1 bg-muted rounded-xl border">
+          <Button
+            size="sm"
+            variant={destination === 'kitchen' ? 'default' : 'ghost'}
+            onClick={() => setDestination('kitchen')}
+            className={`gap-1.5 h-8 text-xs font-bold rounded-lg ${
+              destination === 'kitchen' ? 'bg-emerald-600 text-white shadow-sm' : ''
+            }`}
+          >
+            <ChefHat className="h-4 w-4" /> Cozinha
+          </Button>
+          <Button
+            size="sm"
+            variant={destination === 'bar' ? 'default' : 'ghost'}
+            onClick={() => setDestination('bar')}
+            className={`gap-1.5 h-8 text-xs font-bold rounded-lg ${
+              destination === 'bar' ? 'bg-indigo-600 text-white shadow-sm' : ''
+            }`}
+          >
+            <Wine className="h-4 w-4" /> Bar (Drinks)
+          </Button>
         </div>
       </div>
 
@@ -258,15 +455,48 @@ export default function WaiterDashboard() {
         <div className="lg:col-span-7 space-y-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Cardápio do Restaurante</CardTitle>
-              <CardDescription>
-                Toque ou clique em um prato para adicionar à comanda.
-              </CardDescription>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    {destination === 'bar' ? (
+                      <>
+                        <Wine className="h-5 w-5 text-indigo-600" />
+                        Cardápio do Bar & Bebidas
+                      </>
+                    ) : (
+                      <>
+                        <ChefHat className="h-5 w-5 text-emerald-600" />
+                        Cardápio da Cozinha & Pratos
+                      </>
+                    )}
+                  </CardTitle>
+                  <CardDescription>
+                    {destination === 'bar'
+                      ? 'Exibindo coquetéis, doses e bebidas. Clique para adicionar à comanda do Bar.'
+                      : 'Toque ou clique em um prato para adicionar à comanda da Cozinha.'}
+                  </CardDescription>
+                </div>
+                <Badge
+                  variant="outline"
+                  className={
+                    destination === 'bar'
+                      ? 'bg-indigo-50 text-indigo-700 border-indigo-300'
+                      : 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                  }
+                >
+                  Modo {destination === 'bar' ? 'Bar' : 'Cozinha'}
+                </Badge>
+              </div>
+
               <div className="pt-2 flex flex-col sm:flex-row gap-2">
                 <div className="relative flex-1">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Buscar prato, bebida ou ingrediente..."
+                    placeholder={
+                      destination === 'bar'
+                        ? 'Buscar drink, caipirinha, whisky, dose...'
+                        : 'Buscar prato, entrada, sobremesa...'
+                    }
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-8"
@@ -298,24 +528,32 @@ export default function WaiterDashboard() {
                     </div>
                   ) : filteredItems.length === 0 ? (
                     <div className="text-center py-12 border border-dashed rounded-lg">
-                      <Utensils className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                      <p className="text-sm font-medium">Nenhum prato encontrado</p>
+                      {destination === 'bar' ? (
+                        <Wine className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                      ) : (
+                        <Utensils className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                      )}
+                      <p className="text-sm font-medium">Nenhum item encontrado nesta seção</p>
                       <p className="text-xs text-muted-foreground">
-                        Tente alterar o filtro ou categoria.
+                        Tente alterar a busca ou trocar entre Cozinha e Bar.
                       </p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[600px] overflow-y-auto pr-1">
                       {filteredItems.map((item) => {
                         const inOrder = orderItems.find((o) => o.item.id === item.id)
+                        const isBar = destination === 'bar'
+
                         return (
                           <div
                             key={item.id}
                             onClick={() => addItemToOrder(item)}
                             className={`p-3 rounded-lg border transition-all cursor-pointer flex flex-col justify-between select-none ${
                               inOrder
-                                ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-sm'
-                                : 'border-slate-200 dark:border-slate-800 hover:border-emerald-300 hover:bg-slate-50 dark:hover:bg-slate-900/40'
+                                ? isBar
+                                  ? 'border-indigo-500 bg-indigo-50/60 dark:bg-indigo-950/20 shadow-sm'
+                                  : 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-sm'
+                                : 'border-slate-200 dark:border-slate-800 hover:border-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900/40'
                             }`}
                           >
                             <div className="flex justify-between items-start gap-2">
@@ -330,21 +568,37 @@ export default function WaiterDashboard() {
                                 )}
                               </div>
                               {inOrder && (
-                                <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white text-xs h-5 px-1.5 shrink-0">
+                                <Badge
+                                  className={`text-white text-xs h-5 px-1.5 shrink-0 ${
+                                    isBar
+                                      ? 'bg-indigo-600 hover:bg-indigo-600'
+                                      : 'bg-emerald-600 hover:bg-emerald-600'
+                                  }`}
+                                >
                                   {inOrder.quantity}x
                                 </Badge>
                               )}
                             </div>
 
                             <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-                              <span className="font-mono font-bold text-sm text-emerald-700 dark:text-emerald-400">
+                              <span
+                                className={`font-mono font-bold text-sm ${
+                                  isBar
+                                    ? 'text-indigo-700 dark:text-indigo-400'
+                                    : 'text-emerald-700 dark:text-emerald-400'
+                                }`}
+                              >
                                 R$ {(item.price || 0).toFixed(2).replace('.', ',')}
                               </span>
                               <Button
                                 size="sm"
                                 variant={inOrder ? 'default' : 'outline'}
                                 className={`h-7 px-2.5 text-xs gap-1 ${
-                                  inOrder ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''
+                                  inOrder
+                                    ? isBar
+                                      ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                                      : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                    : ''
                                 }`}
                                 onClick={(e) => {
                                   e.stopPropagation()
@@ -367,15 +621,41 @@ export default function WaiterDashboard() {
 
         {/* Right Column: Order Assembly & Action (5 cols on lg) */}
         <div className="lg:col-span-5 space-y-4">
-          <Card className="border-2 border-emerald-500/40 shadow-md">
-            <CardHeader className="bg-emerald-50/60 dark:bg-emerald-950/30 border-b pb-3">
+          <Card
+            className={`border-2 shadow-md transition-all ${
+              destination === 'bar' ? 'border-indigo-500/50' : 'border-emerald-500/50'
+            }`}
+          >
+            <CardHeader
+              className={`border-b pb-3 ${
+                destination === 'bar'
+                  ? 'bg-indigo-50/70 dark:bg-indigo-950/30'
+                  : 'bg-emerald-50/60 dark:bg-emerald-950/30'
+              }`}
+            >
               <div className="flex justify-between items-center">
                 <div>
-                  <CardTitle className="text-lg flex items-center gap-2 text-emerald-900 dark:text-emerald-100">
-                    <ReceiptText className="h-5 w-5 text-emerald-600" /> Nova Comanda
+                  <CardTitle
+                    className={`text-lg flex items-center gap-2 ${
+                      destination === 'bar'
+                        ? 'text-indigo-950 dark:text-indigo-100'
+                        : 'text-emerald-900 dark:text-emerald-100'
+                    }`}
+                  >
+                    {destination === 'bar' ? (
+                      <>
+                        <Wine className="h-5 w-5 text-indigo-600" /> Comanda para o BAR
+                      </>
+                    ) : (
+                      <>
+                        <ReceiptText className="h-5 w-5 text-emerald-600" /> Comanda para COZINHA
+                      </>
+                    )}
                   </CardTitle>
                   <CardDescription>
-                    Monte o pedido e envie diretamente para a cozinha.
+                    {destination === 'bar'
+                      ? 'Bebidas serão enviadas para o display do Bar.'
+                      : 'Pratos serão enviados para o display da Cozinha.'}
                   </CardDescription>
                 </div>
                 {orderItems.length > 0 && (
@@ -432,10 +712,14 @@ export default function WaiterDashboard() {
 
                 {orderItems.length === 0 ? (
                   <div className="border border-dashed rounded-lg p-6 text-center text-muted-foreground">
-                    <Utensils className="h-6 w-6 mx-auto mb-2 opacity-50" />
+                    {destination === 'bar' ? (
+                      <Wine className="h-6 w-6 mx-auto mb-2 opacity-50" />
+                    ) : (
+                      <Utensils className="h-6 w-6 mx-auto mb-2 opacity-50" />
+                    )}
                     <p className="text-sm">Nenhum item selecionado</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Selecione pratos no cardápio ao lado para montar a comanda.
+                      Selecione itens no cardápio ao lado para montar a comanda.
                     </p>
                   </div>
                 ) : (
@@ -486,7 +770,11 @@ export default function WaiterDashboard() {
 
                         {/* Optional notes per item */}
                         <Input
-                          placeholder="Obs (ex: sem cebola, ponto da carne...)"
+                          placeholder={
+                            destination === 'bar'
+                              ? 'Obs do Drink (ex: pouco gelo, sem açúcar, limão à parte)'
+                              : 'Obs do Prato (ex: sem cebola, ponto da carne)'
+                          }
                           value={entry.notes || ''}
                           onChange={(e) => updateItemNotes(entry.item.id, e.target.value)}
                           className="h-7 text-xs bg-muted/40"
@@ -500,11 +788,11 @@ export default function WaiterDashboard() {
               {/* General Order Notes */}
               <div className="space-y-1.5">
                 <Label htmlFor="order-notes" className="text-xs">
-                  Observações Gerais do Pedido
+                  Observações Gerais da Comanda
                 </Label>
                 <Textarea
                   id="order-notes"
-                  placeholder="Ex: Entregar bebidas primeiro, cliente com pressa..."
+                  placeholder="Ex: Entregar com rapidez, cliente comemorando aniversário..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={2}
@@ -513,36 +801,50 @@ export default function WaiterDashboard() {
               </div>
 
               {/* Big Action Button */}
-              <Button
-                onClick={handleSendToKitchen}
-                disabled={submitting || orderItems.length === 0 || !tableNumber.trim()}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-6 text-base shadow-lg shadow-emerald-600/20 gap-2 transition-all"
-              >
-                <Send className="h-5 w-5" />
-                {submitting ? 'Enviando...' : 'ENVIAR PARA COZINHA'}
-              </Button>
+              {destination === 'bar' ? (
+                <Button
+                  onClick={handleSendOrder}
+                  disabled={submitting || orderItems.length === 0 || !tableNumber.trim()}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-6 text-base shadow-lg shadow-indigo-600/20 gap-2 transition-all"
+                >
+                  <Wine className="h-5 w-5" />
+                  {submitting ? 'Enviando...' : 'ENVIAR PARA O BAR'}
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleSendOrder}
+                  disabled={submitting || orderItems.length === 0 || !tableNumber.trim()}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-6 text-base shadow-lg shadow-emerald-600/20 gap-2 transition-all"
+                >
+                  <Send className="h-5 w-5" />
+                  {submitting ? 'Enviando...' : 'ENVIAR PARA A COZINHA'}
+                </Button>
+              )}
             </CardContent>
           </Card>
 
-          {/* Recent Orders Status for Waiter */}
+          {/* Realtime Status Display for Waiter with Alert highlights */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center justify-between">
-                <span>Últimos Pedidos Enviados</span>
+                <span className="flex items-center gap-1.5">
+                  <Bell className="h-4 w-4 text-purple-600 animate-pulse" />
+                  Status dos Pedidos (Tempo Real)
+                </span>
                 <Badge variant="secondary" className="text-xs font-normal">
-                  Atualização em tempo real
+                  Cozinha & Bar
                 </Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {recentOrders.length === 0 ? (
+              {allRecentOrders.length === 0 ? (
                 <p className="text-xs text-muted-foreground text-center py-4">
                   Nenhum pedido enviado ainda hoje.
                 </p>
               ) : (
-                <div className="space-y-2.5 max-h-[300px] overflow-y-auto pr-1">
-                  {recentOrders.map((ord) => {
-                    let parsedItems: KitchenOrderItem[] = []
+                <div className="space-y-2.5 max-h-[350px] overflow-y-auto pr-1">
+                  {allRecentOrders.map((ord) => {
+                    let parsedItems: { quantity: number; name: string }[] = []
                     try {
                       parsedItems =
                         typeof ord.items === 'string' ? JSON.parse(ord.items) : ord.items
@@ -553,27 +855,54 @@ export default function WaiterDashboard() {
                       hour: '2-digit',
                       minute: '2-digit',
                     })
+                    const isReady = ord.status === 'ready'
+                    const isPreparing = ord.status === 'preparing'
+                    const isBar = ord.orderType === 'bar'
 
                     return (
                       <div
                         key={ord.id}
-                        className="p-2.5 rounded-lg border bg-muted/20 text-xs flex items-center justify-between gap-2"
+                        className={`p-3 rounded-lg border text-xs flex items-center justify-between gap-2 transition-all ${
+                          isReady
+                            ? 'bg-emerald-100/90 dark:bg-emerald-950/50 border-emerald-500 shadow-md ring-2 ring-emerald-500/30'
+                            : isPreparing
+                              ? isBar
+                                ? 'bg-indigo-50/70 dark:bg-indigo-950/30 border-indigo-300'
+                                : 'bg-blue-50/70 dark:bg-blue-950/30 border-blue-300'
+                              : 'bg-muted/20 border-slate-200 dark:border-slate-800'
+                        }`}
                       >
                         <div>
                           <div className="flex items-center gap-2">
+                            <Badge
+                              variant="outline"
+                              className={`text-[10px] px-1.5 py-0 font-bold ${
+                                isBar
+                                  ? 'bg-indigo-100 text-indigo-800 border-indigo-300'
+                                  : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                              }`}
+                            >
+                              {isBar ? 'BAR' : 'COZINHA'}
+                            </Badge>
                             <span className="font-bold text-foreground">
                               Mesa {ord.table_number}
                             </span>
                             <span className="text-muted-foreground">· {timeStr}</span>
                             {ord.customer_name && (
-                              <span className="text-muted-foreground truncate max-w-[100px]">
+                              <span className="text-muted-foreground truncate max-w-[90px]">
                                 ({ord.customer_name})
                               </span>
                             )}
                           </div>
-                          <p className="text-muted-foreground mt-0.5 truncate max-w-[220px]">
+                          <p className="text-muted-foreground mt-1 truncate max-w-[220px]">
                             {parsedItems.map((i) => `${i.quantity}x ${i.name}`).join(', ')}
                           </p>
+                          {isReady && (
+                            <p className="text-emerald-700 dark:text-emerald-300 font-bold mt-1 flex items-center gap-1">
+                              <Bell className="h-3 w-3 animate-bounce" />
+                              Pronto para retirar no balcão!
+                            </p>
+                          )}
                         </div>
                         <div className="shrink-0">{getStatusBadge(ord.status)}</div>
                       </div>

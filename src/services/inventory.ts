@@ -13,6 +13,9 @@ export interface InventoryItem {
   supplier_id: string
   status: string
   user_id: string
+  volume_total_ml?: number
+  dose_padrao_ml?: number
+  real_stock_ml?: number
   expand?: { supplier_id?: any }
 }
 

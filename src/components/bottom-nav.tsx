@@ -7,6 +7,7 @@ import {
   BookOpen,
   ChefHat,
   ClipboardList,
+  Wine,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
@@ -39,6 +40,12 @@ export function BottomNav() {
   } else if (role === 'kitchen') {
     navItems = [
       { title: 'Cozinha', url: '/cozinha', icon: ChefHat },
+      { title: 'Cardápio', url: '/cardapios', icon: BookOpen },
+      { title: 'Estoque', url: '/estoque', icon: Package },
+    ]
+  } else if (role === 'bar') {
+    navItems = [
+      { title: 'Bar', url: '/bar', icon: Wine },
       { title: 'Cardápio', url: '/cardapios', icon: BookOpen },
       { title: 'Estoque', url: '/estoque', icon: Package },
     ]

@@ -46,6 +46,8 @@ function roleLabel(role: string): string {
       return 'Fornecedor'
     case 'kitchen':
       return 'Cozinha'
+    case 'bar':
+      return 'Bar'
     case 'waiter':
       return 'Garçom'
     case 'restaurant':
@@ -177,9 +179,11 @@ export default function Users() {
                           ? 'bg-blue-100 text-blue-800'
                           : u.role === 'kitchen'
                             ? 'bg-amber-100 text-amber-800'
-                            : u.role === 'waiter'
-                              ? 'bg-purple-100 text-purple-800'
-                              : 'bg-emerald-100 text-emerald-800'
+                            : u.role === 'bar'
+                              ? 'bg-indigo-100 text-indigo-800'
+                              : u.role === 'waiter'
+                                ? 'bg-purple-100 text-purple-800'
+                                : 'bg-emerald-100 text-emerald-800'
                       }
                     >
                       {roleLabel(u.role)}

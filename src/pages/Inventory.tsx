@@ -200,9 +200,22 @@ export default function Inventory() {
                         <span className="font-medium">
                           {item.quantity} {item.unit}
                         </span>
-                        <div className="text-[10px] text-muted-foreground">
-                          Min: {item.min_stock} {item.unit}
-                        </div>
+                        {item.dose_padrao_ml &&
+                        (item.unit?.toLowerCase() === 'ml' || item.quantity > 0) ? (
+                          <div className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400">
+                            ~{Math.floor(item.quantity / item.dose_padrao_ml)} doses (
+                            {item.dose_padrao_ml}ml)
+                          </div>
+                        ) : (
+                          <div className="text-[10px] text-muted-foreground">
+                            Min: {item.min_stock} {item.unit}
+                          </div>
+                        )}
+                        {item.real_stock_ml !== undefined && item.dose_padrao_ml && (
+                          <div className="text-[9px] text-muted-foreground">
+                            Real: {item.real_stock_ml}ml
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell className="text-sm">
                         {item.expiry_date

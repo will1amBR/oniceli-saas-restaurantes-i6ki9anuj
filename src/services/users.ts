@@ -1,6 +1,6 @@
 import pb from '@/lib/pocketbase/client'
 
-export type AppRole = 'restaurant' | 'supplier' | 'kitchen' | 'waiter'
+export type AppRole = 'restaurant' | 'supplier' | 'kitchen' | 'waiter' | 'bar'
 
 export interface User {
   id: string

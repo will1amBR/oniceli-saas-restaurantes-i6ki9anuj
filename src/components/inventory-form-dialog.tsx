@@ -43,7 +43,20 @@ export function InventoryFormDialog({
   userId,
   onSaved,
 }: Props) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string
+    category: string
+    location: string
+    quantity: number
+    unit: string
+    unit_cost: number
+    min_stock: number
+    expiry_date: string
+    supplier_id: string
+    volume_total_ml?: number
+    dose_padrao_ml?: number
+    real_stock_ml?: number
+  }>({
     name: '',
     category: '',
     location: '',
@@ -53,6 +66,9 @@ export function InventoryFormDialog({
     min_stock: 0,
     expiry_date: '',
     supplier_id: '',
+    volume_total_ml: 1000,
+    dose_padrao_ml: 50,
+    real_stock_ml: 0,
   })
 
   useEffect(() => {
@@ -67,6 +83,10 @@ export function InventoryFormDialog({
         min_stock: item.min_stock,
         expiry_date: item.expiry_date?.split(' ')[0] || '',
         supplier_id: item.supplier_id || '',
+        volume_total_ml:
+          item.volume_total_ml || (item.unit?.toLowerCase() === 'ml' ? 1000 : undefined),
+        dose_padrao_ml: item.dose_padrao_ml || (item.unit?.toLowerCase() === 'ml' ? 50 : undefined),
+        real_stock_ml: item.real_stock_ml !== undefined ? item.real_stock_ml : item.quantity,
       })
     } else {
       setFormData({
@@ -79,6 +99,9 @@ export function InventoryFormDialog({
         min_stock: 0,
         expiry_date: '',
         supplier_id: '',
+        volume_total_ml: 1000,
+        dose_padrao_ml: 50,
+        real_stock_ml: 0,
       })
     }
   }, [item, open])
@@ -163,18 +186,93 @@ export function InventoryFormDialog({
                   <SelectValue placeholder="Selecione..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Kg">Kg</SelectItem>
-                  <SelectItem value="G">G</SelectItem>
-                  <SelectItem value="Unidade">Unidade</SelectItem>
-                  <SelectItem value="ML">ML</SelectItem>
+                  <SelectItem value="kg">kg (Quilograma)</SelectItem>
+                  <SelectItem value="g">g (Grama)</SelectItem>
+                  <SelectItem value="ml">ml (Mililitro - Bebidas/Doses)</SelectItem>
+                  <SelectItem value="L">L (Litro)</SelectItem>
+                  <SelectItem value="un">un (Unidade)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Campos de Dose para Bebidas / Líquidos (ml ou L) */}
+            {(formData.unit?.toLowerCase() === 'ml' ||
+              formData.unit?.toLowerCase() === 'l' ||
+              formData.category.toLowerCase().includes('bebida') ||
+              formData.category.toLowerCase().includes('álcool') ||
+              formData.category.toLowerCase().includes('drink')) && (
+              <div className="col-span-4 p-3 bg-indigo-50/70 dark:bg-indigo-950/30 rounded-lg border border-indigo-200 dark:border-indigo-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-indigo-900 dark:text-indigo-200 uppercase tracking-wider">
+                    Controle de Doses por ML (Bar)
+                  </span>
+                  <span className="text-[11px] text-indigo-700 dark:text-indigo-300 font-medium">
+                    {formData.dose_padrao_ml && formData.quantity
+                      ? `~${Math.floor(formData.quantity / formData.dose_padrao_ml)} doses disponíveis`
+                      : ''}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-indigo-950 dark:text-indigo-200">
+                      Volume Garrafa/Total (ml)
+                    </Label>
+                    <Input
+                      type="number"
+                      placeholder="Ex: 1000 (1L)"
+                      value={formData.volume_total_ml || ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          volume_total_ml: parseFloat(e.target.value) || 0,
+                        })
+                      }
+                      className="h-8 text-xs bg-background"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-indigo-950 dark:text-indigo-200">
+                      Dose Padrão (ml)
+                    </Label>
+                    <Input
+                      type="number"
+                      placeholder="Ex: 50"
+                      value={formData.dose_padrao_ml || ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          dose_padrao_ml: parseFloat(e.target.value) || 0,
+                        })
+                      }
+                      className="h-8 text-xs bg-background"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-indigo-950 dark:text-indigo-200">
+                    Estoque Físico Real (ml) - Contagem da Garrafa
+                  </Label>
+                  <Input
+                    type="number"
+                    placeholder="Ex: 850"
+                    value={formData.real_stock_ml || ''}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        real_stock_ml: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    className="h-8 text-xs bg-background"
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-4 items-center gap-3">
               <Label className="text-right">Custo</Label>
               <Input
                 type="number"
-                step="0.01"
+                step="0.001"
                 value={formData.unit_cost}
                 onChange={(e) =>
                   setFormData({ ...formData, unit_cost: parseFloat(e.target.value) || 0 })

@@ -20,6 +20,7 @@ export function HomeRedirect() {
     let target = '/dashboard'
     if (role === 'supplier') target = '/supplier/dashboard'
     else if (role === 'kitchen') target = '/cozinha'
+    else if (role === 'bar') target = '/bar'
     else if (role === 'waiter') target = '/garcom'
     return <Navigate to={target} replace />
   }
