@@ -10,6 +10,7 @@ import { ProtectedRoute } from '@/components/protected-route'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Onboarding from './pages/Onboarding'
+import DigitalMenu from './pages/DigitalMenu'
 import Index from './pages/Index'
 import Menu from './pages/Menu'
 import Inventory from './pages/Inventory'
@@ -78,6 +79,7 @@ const App = () => (
             <Route path="/" element={<AuthRedirect />} />
             <Route path="/landing" element={<Landing />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/cardapio" element={<DigitalMenu />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route
               element={
@@ -88,6 +90,7 @@ const App = () => (
             >
               <Route path="/dashboard" element={<Index />} />
               <Route path="/cardapios" element={<Menu />} />
+              <Route path="/cardapio-gestao" element={<Menu />} />
               <Route path="/estoque" element={<Inventory />} />
               <Route path="/receitas" element={<Recipes />} />
               <Route path="/vendas" element={<Sales />} />

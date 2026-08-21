@@ -1,30 +1,19 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import {
   ChefHat,
   Clock,
   CheckCircle2,
-  AlertCircle,
-  Utensils,
-  Play,
+  AlertTriangle,
+  Flame,
+  Check,
   RotateCcw,
   Sparkles,
-  Timer,
-  Volume2,
-  PackageCheck,
-  Check,
+  Search,
+  Filter,
 } from 'lucide-react'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardFooter,
-} from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
 import { useRealtime } from '@/hooks/use-realtime'
 import {
@@ -32,363 +21,274 @@ import {
   updateKitchenOrderStatus,
   type KitchenOrder,
   type KitchenOrderItem,
-  type KitchenOrderStatus,
 } from '@/services/kitchen-orders'
 import { getErrorMessage } from '@/lib/pocketbase/errors'
+import { OrderCardSkeleton } from '@/components/loading-skeletons'
+import { ErrorState } from '@/components/error-state'
+import { StatusBadge } from '@/components/status-badge'
 
 export default function KitchenDashboard() {
-  const { user } = useAuth()
   const { toast } = useToast()
-
   const [orders, setOrders] = useState<KitchenOrder[]>([])
   const [loading, setLoading] = useState(true)
-  const [updatingId, setUpdatingId] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'preparing' | 'ready'>('all')
+  const [error, setError] = useState(false)
+  const [filter, setFilter] = useState<'all' | 'pending' | 'preparing' | 'ready'>('all')
 
-  const restaurantId = user?.restaurant_id || (user?.role === 'restaurant' ? user.id : '')
-
-  const loadData = useCallback(async () => {
+  const loadOrders = async () => {
     try {
-      const data = await getKitchenOrders(restaurantId || undefined)
+      setError(false)
+      const data = await getKitchenOrders()
+      // Sort: pending first, then preparing, then ready
       setOrders(data)
     } catch {
-      /* ignore */
+      setError(true)
     } finally {
       setLoading(false)
     }
-  }, [restaurantId])
-
-  useEffect(() => {
-    loadData()
-  }, [loadData])
-
-  // Realtime subscription to kitchen_orders
-  useRealtime('kitchen_orders', () => {
-    loadData()
-  })
-
-  // Format Elapsed time
-  const getElapsedTime = (createdStr: string) => {
-    try {
-      const created = new Date(createdStr).getTime()
-      const now = Date.now()
-      const diffMinutes = Math.floor((now - created) / 60000)
-      if (diffMinutes < 1) return 'Agora mesmo'
-      if (diffMinutes === 1) return 'Há 1 min'
-      if (diffMinutes < 60) return `Há ${diffMinutes} min`
-      const diffHours = Math.floor(diffMinutes / 60)
-      return `Há ${diffHours}h ${diffMinutes % 60}m`
-    } catch {
-      return ''
-    }
   }
 
-  const handleStatusChange = async (order: KitchenOrder, nextStatus: KitchenOrderStatus) => {
-    setUpdatingId(order.id)
+  useEffect(() => {
+    loadOrders()
+  }, [])
+
+  useRealtime('kitchen_orders', () => loadOrders())
+
+  const handleStatusChange = async (
+    order: KitchenOrder,
+    newStatus: 'pending' | 'preparing' | 'ready' | 'delivered',
+  ) => {
     try {
-      await updateKitchenOrderStatus(order.id, nextStatus)
-      if (nextStatus === 'ready') {
-        toast({
-          title: 'Prato Pronto!',
-          description: `Mesa ${order.table_number} marcada como pronta. Baixa de estoque efetuada com sucesso!`,
-        })
-      } else if (nextStatus === 'preparing') {
-        toast({
-          title: 'Preparo iniciado',
-          description: `Mesa ${order.table_number} agora está Em Preparo.`,
-        })
-      }
-      loadData()
+      await updateKitchenOrderStatus(order.id, newStatus)
+
+      toast({
+        title: 'Status atualizado!',
+        description: `Mesa ${order.table_number || '01'} agora está: ${newStatus.toUpperCase()}`,
+        className: 'bg-emerald-600 text-white font-bold',
+      })
+      loadOrders()
     } catch (err) {
       toast({
-        title: 'Erro ao atualizar pedido',
+        title: 'Erro ao atualizar',
         description: getErrorMessage(err),
         variant: 'destructive',
       })
-    } finally {
-      setUpdatingId(null)
     }
   }
 
-  const parseOrderItems = (items: string | KitchenOrderItem[]): KitchenOrderItem[] => {
-    if (!items) return []
-    if (typeof items === 'string') {
-      try {
-        return JSON.parse(items)
-      } catch {
-        return []
-      }
-    }
-    return items
+  const filteredOrders = orders.filter((o) => {
+    if (filter === 'all') return o.status !== 'delivered'
+    return o.status === filter
+  })
+
+  const pendingCount = orders.filter((o) => o.status === 'pending').length
+  const preparingCount = orders.filter((o) => o.status === 'preparing').length
+  const readyCount = orders.filter((o) => o.status === 'ready').length
+
+  const getElapsedTime = (createdStr: string) => {
+    if (!createdStr) return '0 min'
+    const created = new Date(createdStr)
+    const diffMin = Math.floor((Date.now() - created.getTime()) / 60000)
+    return `${diffMin} min`
   }
-
-  // Filtered orders
-  const pendingOrders = useMemo(() => orders.filter((o) => o.status === 'pending'), [orders])
-  const preparingOrders = useMemo(() => orders.filter((o) => o.status === 'preparing'), [orders])
-  const readyOrders = useMemo(() => orders.filter((o) => o.status === 'ready'), [orders])
-  const deliveredOrders = useMemo(() => orders.filter((o) => o.status === 'delivered'), [orders])
-
-  const displayedOrders = useMemo(() => {
-    if (activeTab === 'pending') return pendingOrders
-    if (activeTab === 'preparing') return preparingOrders
-    if (activeTab === 'ready') return readyOrders
-    return orders.filter((o) => o.status !== 'delivered' && o.status !== 'cancelled')
-  }, [activeTab, orders, pendingOrders, preparingOrders, readyOrders])
 
   return (
-    <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="space-y-6 pb-20">
+      {/* Header with quick stats */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card p-4 sm:p-5 rounded-2xl border border-border/60 shadow-sm">
         <div>
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700">
-              <ChefHat className="h-6 w-6" />
-            </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-                Painel da Cozinha (KDS)
-              </h1>
-              <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-0.5">
-                <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Pedidos em tempo real · Baixa automática de ingredientes
-              </p>
-            </div>
-          </div>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-2">
+            KDS Cozinha
+            <Badge className="bg-amber-600 text-white text-[10px] font-bold">Display KDS</Badge>
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+            Monitor de comandas e tempo de preparo de pratos em tempo real.
+          </p>
         </div>
 
-        {/* Counters summary */}
-        <div className="flex items-center gap-2">
-          <Badge
-            variant="outline"
-            className="px-3 py-1 bg-amber-50 text-amber-800 border-amber-300 font-semibold text-sm"
+        {/* Filter Badges */}
+        <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto">
+          <button
+            onClick={() => setFilter('all')}
+            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] ${
+              filter === 'all'
+                ? 'bg-foreground text-background shadow-md'
+                : 'bg-muted text-muted-foreground'
+            }`}
           >
-            {pendingOrders.length} Pendentes
-          </Badge>
-          <Badge
-            variant="outline"
-            className="px-3 py-1 bg-blue-50 text-blue-800 border-blue-300 font-semibold text-sm"
+            Todos ({pendingCount + preparingCount + readyCount})
+          </button>
+          <button
+            onClick={() => setFilter('pending')}
+            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] flex items-center gap-1.5 ${
+              filter === 'pending'
+                ? 'bg-amber-600 text-white shadow-md'
+                : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300'
+            }`}
           >
-            {preparingOrders.length} Em Preparo
-          </Badge>
-          <Badge
-            variant="outline"
-            className="px-3 py-1 bg-emerald-50 text-emerald-800 border-emerald-300 font-semibold text-sm"
+            <Clock className="h-3.5 w-3.5" /> Pendentes ({pendingCount})
+          </button>
+          <button
+            onClick={() => setFilter('preparing')}
+            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] flex items-center gap-1.5 ${
+              filter === 'preparing'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300'
+            }`}
           >
-            {readyOrders.length} Prontos
-          </Badge>
+            <Flame className="h-3.5 w-3.5" /> Em Preparo ({preparingCount})
+          </button>
+          <button
+            onClick={() => setFilter('ready')}
+            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] flex items-center gap-1.5 ${
+              filter === 'ready'
+                ? 'bg-emerald-600 text-white shadow-md'
+                : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
+            }`}
+          >
+            <CheckCircle2 className="h-3.5 w-3.5" /> Prontos ({readyCount})
+          </button>
         </div>
       </div>
 
-      {/* Main Tabs / Filter */}
-      <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="space-y-4">
-        <TabsList className="grid grid-cols-4 max-w-md">
-          <TabsTrigger value="all">
-            Todos Ativos ({pendingOrders.length + preparingOrders.length + readyOrders.length})
-          </TabsTrigger>
-          <TabsTrigger value="pending">Pendentes ({pendingOrders.length})</TabsTrigger>
-          <TabsTrigger value="preparing">Em Preparo ({preparingOrders.length})</TabsTrigger>
-          <TabsTrigger value="ready">Prontos ({readyOrders.length})</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value={activeTab} className="mt-0">
-          {loading ? (
-            <div className="text-center py-16 text-muted-foreground">
-              Carregando pedidos da cozinha...
+      {/* Main Grid of Order Tickets */}
+      {loading ? (
+        <OrderCardSkeleton />
+      ) : error ? (
+        <ErrorState onRetry={loadOrders} />
+      ) : filteredOrders.length === 0 ? (
+        <Card className="border-dashed py-20 text-center rounded-2xl">
+          <CardContent className="space-y-3">
+            <div className="p-4 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 inline-flex">
+              <CheckCircle2 className="h-10 w-10" />
             </div>
-          ) : displayedOrders.length === 0 ? (
-            <Card className="border-dashed">
-              <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="p-4 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 mb-3">
-                  <ChefHat className="h-10 w-10" />
+            <h3 className="font-bold text-lg">Cozinha sem pedidos nesta fila!</h3>
+            <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+              Quando novos pratos forem solicitados pelos clientes ou garçons, eles aparecerão aqui
+              instantaneamente.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {filteredOrders.map((order) => {
+            let itemsList: KitchenOrderItem[] = []
+            if (Array.isArray(order.items)) {
+              itemsList = order.items
+            } else if (typeof order.items === 'string') {
+              try {
+                itemsList = JSON.parse(order.items || '[]')
+              } catch {
+                itemsList = []
+              }
+            }
+
+            const isPending = order.status === 'pending'
+            const isPreparing = order.status === 'preparing'
+            const isReady = order.status === 'ready'
+            const elapsed = getElapsedTime(order.created)
+
+            return (
+              <Card
+                key={order.id}
+                className={`rounded-2xl border-2 transition-all flex flex-col justify-between shadow-sm hover:shadow-md ${
+                  isPending
+                    ? 'border-amber-400/80 bg-card'
+                    : isPreparing
+                      ? 'border-blue-500 bg-blue-50/10 dark:bg-blue-950/10'
+                      : 'border-emerald-500 bg-emerald-50/10 dark:bg-emerald-950/10'
+                }`}
+              >
+                <div>
+                  {/* Card Header with Table & Time */}
+                  <CardHeader className="p-4 pb-3 border-b bg-muted/20">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-black text-xl text-foreground">
+                            Mesa {order.table_number || '01'}
+                          </h3>
+                          <StatusBadge status={order.status} />
+                        </div>
+                        {order.customer_name && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Cliente:{' '}
+                            <strong className="text-foreground">{order.customer_name}</strong>
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1 text-xs font-mono font-bold bg-background border px-2.5 py-1 rounded-xl shadow-xs">
+                        <Clock className="h-3.5 w-3.5 text-amber-600" />
+                        <span>{elapsed}</span>
+                      </div>
+                    </div>
+                  </CardHeader>
+
+                  {/* Items list */}
+                  <CardContent className="p-4 space-y-2.5">
+                    {itemsList.map((it: any, i: number) => (
+                      <div
+                        key={i}
+                        className="p-2.5 rounded-xl bg-muted/40 border border-border/50 text-xs space-y-1"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-extrabold text-sm text-foreground">
+                            {it.quantity || 1}x {it.name}
+                          </span>
+                        </div>
+                        {it.notes && (
+                          <p className="text-red-600 dark:text-red-400 font-bold bg-red-50 dark:bg-red-950/40 px-2 py-0.5 rounded text-[11px]">
+                            ⚠️ Obs: {it.notes}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </CardContent>
                 </div>
-                <p className="text-lg font-semibold">Nenhum pedido nesta fila no momento</p>
-                <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-                  Quando o garçom enviar novos pedidos pelo cardápio, eles aparecerão aqui
-                  instantaneamente.
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-              {displayedOrders.map((order) => {
-                const items = parseOrderItems(order.items)
-                const isPending = order.status === 'pending'
-                const isPreparing = order.status === 'preparing'
-                const isReady = order.status === 'ready'
-                const isUpdating = updatingId === order.id
 
-                const elapsed = getElapsedTime(order.created)
-                const timeOnly = new Date(order.created).toLocaleTimeString('pt-BR', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
+                {/* Footer Action Buttons */}
+                <div className="p-4 pt-0 border-t mt-2 pt-3">
+                  {isPending && (
+                    <Button
+                      onClick={() => handleStatusChange(order, 'preparing')}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-11 rounded-xl gap-2 min-h-[44px]"
+                    >
+                      <Flame className="h-4 w-4" /> Iniciar Preparo
+                    </Button>
+                  )}
 
-                return (
-                  <Card
-                    key={order.id}
-                    className={`flex flex-col border-2 transition-all duration-200 shadow-sm ${
-                      isPending
-                        ? 'border-amber-400 bg-amber-50/10 dark:bg-amber-950/10 shadow-amber-100 dark:shadow-none'
-                        : isPreparing
-                          ? 'border-blue-400 bg-blue-50/10 dark:bg-blue-950/10 shadow-blue-100 dark:shadow-none'
-                          : 'border-emerald-500 bg-emerald-50/15 dark:bg-emerald-950/10'
-                    }`}
-                  >
-                    {/* Header with Table Number & Time */}
-                    <CardHeader className="pb-3 border-b bg-muted/30">
-                      <div className="flex justify-between items-start gap-2">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xl font-black tracking-tight text-foreground">
-                              MESA {order.table_number}
-                            </span>
-                            {order.customer_name && (
-                              <span className="text-xs font-medium text-muted-foreground truncate max-w-[120px]">
-                                · {order.customer_name}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground font-medium">
-                            <Clock className="h-3.5 w-3.5" />
-                            <span>{timeOnly}</span>
-                            <span>•</span>
-                            <span className="font-semibold text-amber-700 dark:text-amber-400">
-                              {elapsed}
-                            </span>
-                          </div>
-                        </div>
+                  {isPreparing && (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => handleStatusChange(order, 'pending')}
+                        className="h-11 rounded-xl text-xs font-bold"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        onClick={() => handleStatusChange(order, 'ready')}
+                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11 rounded-xl gap-2 min-h-[44px]"
+                      >
+                        <CheckCircle2 className="h-4 w-4" /> Pronto para Servir
+                      </Button>
+                    </div>
+                  )}
 
-                        {/* Status Badge */}
-                        <div>
-                          {isPending && (
-                            <Badge className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs uppercase px-2.5 py-0.5">
-                              Pendente
-                            </Badge>
-                          )}
-                          {isPreparing && (
-                            <Badge className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase px-2.5 py-0.5 animate-pulse">
-                              Em Preparo
-                            </Badge>
-                          )}
-                          {isReady && (
-                            <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase px-2.5 py-0.5">
-                              Pronto
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </CardHeader>
-
-                    {/* Order Items Body */}
-                    <CardContent className="flex-1 pt-4 space-y-3">
-                      <div className="space-y-2">
-                        {items.map((item, idx) => (
-                          <div
-                            key={idx}
-                            className="p-2.5 rounded-lg border bg-background/80 flex items-start justify-between gap-3"
-                          >
-                            <div className="flex items-start gap-2 min-w-0">
-                              <span className="flex items-center justify-center h-6 w-6 rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-bold text-sm shrink-0">
-                                {item.quantity}x
-                              </span>
-                              <div className="min-w-0">
-                                <p className="font-bold text-sm leading-snug text-foreground">
-                                  {item.name}
-                                </p>
-                                {item.notes && (
-                                  <p className="text-xs text-amber-700 dark:text-amber-400 font-medium mt-0.5 flex items-center gap-1">
-                                    <AlertCircle className="h-3 w-3 shrink-0" />
-                                    Obs: {item.notes}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* General Notes */}
-                      {order.notes && (
-                        <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 text-xs text-amber-900 dark:text-amber-200">
-                          <strong className="block mb-0.5">Observação da comanda:</strong>
-                          {order.notes}
-                        </div>
-                      )}
-
-                      {/* Stock deduction feedback badge */}
-                      {order.stock_deducted && (
-                        <div className="flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400 font-medium pt-1">
-                          <PackageCheck className="h-4 w-4" />
-                          <span>Estoque baixado automaticamente</span>
-                        </div>
-                      )}
-                    </CardContent>
-
-                    {/* Footer Actions */}
-                    <CardFooter className="pt-3 border-t bg-muted/20 gap-2">
-                      {isPending && (
-                        <Button
-                          onClick={() => handleStatusChange(order, 'preparing')}
-                          disabled={isUpdating}
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-11 gap-2 shadow-sm"
-                        >
-                          <Play className="h-4 w-4" />
-                          INICIAR PREPARO
-                        </Button>
-                      )}
-
-                      {isPreparing && (
-                        <div className="flex gap-2 w-full">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleStatusChange(order, 'pending')}
-                            disabled={isUpdating}
-                            className="text-xs px-2.5"
-                          >
-                            <RotateCcw className="h-3.5 w-3.5 mr-1" /> Voltar
-                          </Button>
-                          <Button
-                            onClick={() => handleStatusChange(order, 'ready')}
-                            disabled={isUpdating}
-                            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11 gap-2 shadow-md shadow-emerald-600/20"
-                          >
-                            <CheckCircle2 className="h-5 w-5" />
-                            MARCAR COMO PRONTO
-                          </Button>
-                        </div>
-                      )}
-
-                      {isReady && (
-                        <div className="flex gap-2 w-full">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleStatusChange(order, 'preparing')}
-                            disabled={isUpdating}
-                            className="text-xs px-2.5"
-                          >
-                            <RotateCcw className="h-3.5 w-3.5 mr-1" /> Voltar
-                          </Button>
-                          <Button
-                            onClick={() => handleStatusChange(order, 'delivered')}
-                            disabled={isUpdating}
-                            variant="secondary"
-                            className="flex-1 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 font-semibold h-11 gap-2"
-                          >
-                            <Check className="h-4 w-4" />
-                            FINALIZAR / ENTREGUE
-                          </Button>
-                        </div>
-                      )}
-                    </CardFooter>
-                  </Card>
-                )
-              })}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+                  {isReady && (
+                    <Button
+                      onClick={() => handleStatusChange(order, 'delivered')}
+                      className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold h-11 rounded-xl gap-2 min-h-[44px]"
+                    >
+                      <Check className="h-4 w-4" /> Entregue à Mesa
+                    </Button>
+                  )}
+                </div>
+              </Card>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

@@ -1,10 +1,30 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
-import { ChefHat, Truck, Check, ArrowRight, ArrowLeft, Store } from 'lucide-react'
+import {
+  ChefHat,
+  Truck,
+  Check,
+  ArrowRight,
+  ArrowLeft,
+  Store,
+  Upload,
+  Image as ImageIcon,
+  Users,
+  Layers,
+  Sparkles,
+  CheckCircle2,
+  UtensilsCrossed,
+  Wine,
+  Coffee,
+  Plus,
+  Trash2,
+  ShieldCheck,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
 import {
   Select,
   SelectContent,
@@ -13,133 +33,313 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useAuth } from '@/hooks/use-auth'
+import { useToast } from '@/hooks/use-toast'
 import { saveOnboardingData, persistOnboardingData } from '@/services/onboarding'
 import pb from '@/lib/pocketbase/client'
 import { cn } from '@/lib/utils'
+
+const defaultRestaurantCategories = [
+  'Pratos Principais',
+  'Entradas',
+  'Cafés & Bebidas',
+  'Sucos & Smoothies',
+  'Toasts & Lanches',
+  'Bowls & Saladas',
+  'Sobremesas',
+  'Coquetéis & Drinks',
+]
+
+const supplierCategories = [
+  'Hortifruti',
+  'Carnes & Aves',
+  'Peixes & Frutos do Mar',
+  'Laticínios & Queijos',
+  'Bebidas & Destilados',
+  'Grãos & Farinhas',
+  'Embalagens & Descartáveis',
+  'Padaria & Confeitaria',
+]
 
 const plans = [
   {
     name: 'Starter',
     price: 'R$ 0',
     period: '/mês',
-    features: ['Gestão de estoque', '1 usuário', 'Relatórios básicos'],
+    description: 'Para quem está começando a organizar a operação.',
+    features: [
+      'Gestão de cardápio digital',
+      'Controle básico de estoque',
+      'Até 2 usuários',
+      'KDS Cozinha',
+    ],
     highlight: false,
   },
   {
     name: 'Pro',
     price: 'R$ 149',
     period: '/mês',
-    features: ['5 Agentes de IA', 'Controle de validade', 'Análise financeira', 'Multi-usuário'],
+    description: 'O mais completo para restaurantes em crescimento.',
+    features: [
+      'Cardápio digital ilimitado',
+      'KDS Cozinha & Bar (Doses em ML)',
+      'Controle de Validade & CMV',
+      'Curva ABC & Inteligência Artificial',
+      'Usuários e garçons ilimitados',
+    ],
     highlight: true,
   },
   {
     name: 'Enterprise',
     price: 'R$ 399',
     period: '/mês',
-    features: ['Multi-loja', 'API completa', 'Suporte prioritário', 'Previsão de demanda'],
+    description: 'Para redes de franquias e grandes operações.',
+    features: [
+      'Multi-lojas centralizadas',
+      'API e integrações completas',
+      'Suporte VIP dedicado',
+      'Previsão de demanda por IA',
+    ],
     highlight: false,
   },
-]
-
-const supplierCategories = [
-  'Peixes',
-  'Hortifruti',
-  'Laticínios',
-  'Grãos',
-  'Carnes',
-  'Bebidas',
-  'Padaria',
-  'Outros',
 ]
 
 export default function Onboarding() {
   const [params] = useSearchParams()
   const navigate = useNavigate()
-  const { isAuthenticated } = useAuth()
-  const role = params.get('role') || 'restaurant'
-  const [step, setStep] = useState(1)
-  const [form, setForm] = useState<Record<string, string>>({})
+  const { toast } = useToast()
+  const { isAuthenticated, user } = useAuth()
+  const initialRole = (params.get('role') as 'restaurant' | 'supplier') || 'restaurant'
 
-  const setField = (key: string, value: string) => setForm((p) => ({ ...p, [key]: value }))
+  const [role, setRole] = useState<'restaurant' | 'supplier'>(initialRole)
+  const [step, setStep] = useState(1)
+  const [loadingFinish, setLoadingFinish] = useState(false)
+
+  // Form State
+  const [restaurantName, setRestaurantName] = useState('')
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([
+    'Pratos Principais',
+    'Entradas',
+    'Cafés & Bebidas',
+    'Sobremesas',
+  ])
+  const [newCatInput, setNewCatInput] = useState('')
+
+  // Team Invite State
+  const [teamEmails, setTeamEmails] = useState<{ email: string; role: string }[]>([
+    { email: '', role: 'waiter' },
+  ])
+
+  // Supplier fields
+  const [deliveryLeadTime, setDeliveryLeadTime] = useState('2')
+  const [deliveryRegions, setDeliveryRegions] = useState('')
+
+  const isRestaurant = role === 'restaurant'
+
   const toggleCategory = (cat: string) => {
-    const current = form.categories ? form.categories.split(',') : []
-    const next = current.includes(cat) ? current.filter((c) => c !== cat) : [...current, cat]
-    setField('categories', next.join(','))
+    if (selectedCategories.includes(cat)) {
+      setSelectedCategories(selectedCategories.filter((c) => c !== cat))
+    } else {
+      setSelectedCategories([...selectedCategories, cat])
+    }
   }
+
+  const addCustomCategory = () => {
+    if (newCatInput.trim() && !selectedCategories.includes(newCatInput.trim())) {
+      setSelectedCategories([...selectedCategories, newCatInput.trim()])
+      setNewCatInput('')
+    }
+  }
+
+  const handleAddTeamMember = () => {
+    setTeamEmails([...teamEmails, { email: '', role: 'waiter' }])
+  }
+
+  const handleUpdateTeamMember = (index: number, field: 'email' | 'role', val: string) => {
+    const updated = [...teamEmails]
+    updated[index][field] = val
+    setTeamEmails(updated)
+  }
+
+  const handleRemoveTeamMember = (index: number) => {
+    setTeamEmails(teamEmails.filter((_, i) => i !== index))
+  }
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = () => {
+        setLogoPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   const handleFinish = async (planName: string) => {
+    setLoadingFinish(true)
+    const questionnaireData: Record<string, string> = {
+      name: restaurantName || (isRestaurant ? 'Meu Restaurante' : 'Meu Fornecedor'),
+      categories: selectedCategories.join(','),
+      deliveryLeadTime,
+      deliveryRegions,
+      teamMembers: JSON.stringify(teamEmails.filter((t) => t.email.trim())),
+    }
+
     saveOnboardingData({
-      role: role as 'restaurant' | 'supplier',
-      questionnaire: form,
+      role,
+      questionnaire: questionnaireData,
       plan: planName,
     })
-    if (isAuthenticated) {
+
+    if (isAuthenticated && user?.id) {
       try {
-        await persistOnboardingData(pb.authStore.record?.id || '')
+        await persistOnboardingData(user.id)
+        toast({
+          title: 'Configuração concluída!',
+          description: `Bem-vindo ao Oniceli, ${restaurantName || 'Restaurante'}!`,
+          className: 'bg-emerald-600 text-white font-bold',
+        })
       } catch {
-        /* ignore persistence errors */
+        /* ignore */
       }
-      navigate('/dashboard')
+      navigate(isRestaurant ? '/dashboard' : '/supplier/dashboard')
     } else {
       navigate('/login')
     }
+    setLoadingFinish(false)
   }
-  const isRestaurant = role === 'restaurant'
+
+  const totalSteps = 4
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white dark:from-emerald-950/20 dark:to-background py-8 px-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <Link to="/" className="flex items-center gap-2 font-bold text-xl text-primary">
-            <ChefHat className="h-6 w-6" /> Oniceli
+    <div className="min-h-screen bg-gradient-to-br from-emerald-900/10 via-background to-teal-900/10 py-8 px-4 selection:bg-emerald-500 selection:text-white">
+      <div className="max-w-2xl mx-auto space-y-6">
+        {/* Header with Step Progress Bar */}
+        <div className="flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2 font-black text-xl text-emerald-600">
+            <div className="p-2 rounded-xl bg-emerald-600 text-white">
+              <ChefHat className="h-5 w-5" />
+            </div>
+            <span>Oniceli</span>
           </Link>
-          <div className="flex items-center gap-2">
-            {[1, 2, 3].map((s) => (
+
+          {/* Stepper pills */}
+          <div className="flex items-center gap-1.5">
+            {[1, 2, 3, 4].map((s) => (
               <div
                 key={s}
                 className={cn(
-                  'h-2 w-10 rounded-full transition-colors',
-                  s <= step ? 'bg-emerald-600' : 'bg-muted',
+                  'h-2.5 rounded-full transition-all',
+                  s === step
+                    ? 'w-8 bg-emerald-600'
+                    : s < step
+                      ? 'w-4 bg-emerald-500/80'
+                      : 'w-4 bg-muted',
                 )}
               />
             ))}
           </div>
         </div>
 
+        {/* Step Indicator Header */}
+        <div className="text-center space-y-1">
+          <Badge
+            variant="outline"
+            className="text-emerald-700 bg-emerald-50 border-emerald-300 font-bold"
+          >
+            Passo {step} de {totalSteps}
+          </Badge>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
+            {step === 1 && 'Escolha seu perfil de negócio'}
+            {step === 2 && (isRestaurant ? 'Identidade do Restaurante' : 'Identidade da Empresa')}
+            {step === 3 && (isRestaurant ? 'Categorias do Cardápio' : 'Categorias de Fornecimento')}
+            {step === 4 && 'Escolha o plano ideal'}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {step === 1 && 'Personalizaremos sua experiência de acordo com seu modelo'}
+            {step === 2 && 'Defina o nome e o logotipo para o cardápio e os relatórios'}
+            {step === 3 && 'Organize os itens que seu restaurante serve aos clientes'}
+            {step === 4 && 'Tudo pronto para alavancar sua operação com inteligência'}
+          </p>
+        </div>
+
+        {/* STEP 1: Profile Type */}
         {step === 1 && (
-          <Card className="animate-fade-in-up">
+          <Card className="shadow-lg border-border/60 rounded-2xl animate-fade-in-up">
             <CardContent className="pt-6 space-y-6">
-              <div className="text-center">
-                <h2 className="text-2xl font-bold">Confirme seu perfil</h2>
-                <p className="text-muted-foreground mt-1">Você está se cadastrando como:</p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { r: 'restaurant', icon: Store, label: 'Restaurante' },
-                  { r: 'supplier', icon: Truck, label: 'Fornecedor' },
-                ].map((opt) => (
-                  <button
-                    key={opt.r}
-                    onClick={() => navigate(`/onboarding?role=${opt.r}`)}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => setRole('restaurant')}
+                  className={cn(
+                    'flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all text-center',
+                    role === 'restaurant'
+                      ? 'border-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/30 shadow-md ring-2 ring-emerald-600/20'
+                      : 'border-border hover:border-emerald-400 bg-card',
+                  )}
+                >
+                  <div
                     className={cn(
-                      'flex flex-col items-center gap-2 p-6 rounded-xl border-2 transition-all min-h-[88px] justify-center',
-                      role === opt.r
-                        ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20'
-                        : 'border-border hover:border-emerald-400',
+                      'p-4 rounded-2xl',
+                      role === 'restaurant'
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-muted text-muted-foreground',
                     )}
                   >
-                    <opt.icon
-                      className={cn(
-                        'h-8 w-8',
-                        role === opt.r ? 'text-emerald-600' : 'text-muted-foreground',
-                      )}
-                    />
-                    <span className="font-medium">{opt.label}</span>
-                  </button>
-                ))}
+                    <Store className="h-8 w-8" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg text-foreground">Restaurante / Bar / Café</h3>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Cardápio digital, comanda de garçom, KDS cozinha & bar e controle de estoque
+                    </p>
+                  </div>
+                  {role === 'restaurant' && (
+                    <Badge className="bg-emerald-600 text-white text-[10px] font-bold mt-2">
+                      <Check className="h-3 w-3 mr-1" /> Selecionado
+                    </Badge>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setRole('supplier')}
+                  className={cn(
+                    'flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all text-center',
+                    role === 'supplier'
+                      ? 'border-blue-600 bg-blue-50/70 dark:bg-blue-950/30 shadow-md ring-2 ring-blue-600/20'
+                      : 'border-border hover:border-blue-400 bg-card',
+                  )}
+                >
+                  <div
+                    className={cn(
+                      'p-4 rounded-2xl',
+                      role === 'supplier'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-muted text-muted-foreground',
+                    )}
+                  >
+                    <Truck className="h-8 w-8" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg text-foreground">Fornecedor / Distribuidor</h3>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Catálogo de insumos, recebimento de pedidos dos restaurantes e gestão
+                      financeira
+                    </p>
+                  </div>
+                  {role === 'supplier' && (
+                    <Badge className="bg-blue-600 text-white text-[10px] font-bold mt-2">
+                      <Check className="h-3 w-3 mr-1" /> Selecionado
+                    </Badge>
+                  )}
+                </button>
               </div>
+
               <Button
                 onClick={() => setStep(2)}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 gap-2 min-h-[44px]"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 rounded-xl text-base gap-2"
               >
                 Continuar <ArrowRight className="h-4 w-4" />
               </Button>
@@ -147,144 +347,163 @@ export default function Onboarding() {
           </Card>
         )}
 
+        {/* STEP 2: Name & Logo & Team */}
         {step === 2 && (
-          <Card className="animate-fade-in-up">
-            <CardContent className="pt-6 space-y-6">
-              <div className="text-center">
-                <h2 className="text-2xl font-bold">
-                  {isRestaurant ? 'Conte sobre seu restaurante' : 'Conte sobre sua empresa'}
-                </h2>
-                <p className="text-muted-foreground mt-1">Responda algumas perguntas rápidas</p>
+          <Card className="shadow-lg border-border/60 rounded-2xl animate-fade-in-up">
+            <CardContent className="pt-6 space-y-5">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-bold">
+                  {isRestaurant
+                    ? 'Nome do Restaurante / Estabelecimento *'
+                    : 'Nome da Distribuidora *'}
+                </Label>
+                <Input
+                  value={restaurantName}
+                  onChange={(e) => setRestaurantName(e.target.value)}
+                  placeholder={
+                    isRestaurant ? 'Ex: Serena Café Bistrô' : 'Ex: Distribuidora Alimentos Brasil'
+                  }
+                  className="h-12 text-base font-semibold rounded-xl"
+                  autoFocus
+                />
               </div>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>{isRestaurant ? 'Nome do restaurante' : 'Nome da empresa'}</Label>
-                  <Input
-                    value={form.name || ''}
-                    onChange={(e) => setField('name', e.target.value)}
-                    placeholder={
-                      isRestaurant ? 'Ex: La Bella Trattoria' : 'Ex: Distribuidora Alimentos Sul'
-                    }
-                    className="min-h-[44px]"
-                  />
+
+              {/* Logo upload mockup */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold">Logotipo do Estabelecimento (Opcional)</Label>
+                <div className="flex items-center gap-4 p-4 rounded-xl border border-dashed border-border bg-muted/20">
+                  <div className="h-16 w-16 rounded-xl bg-muted flex items-center justify-center overflow-hidden border">
+                    {logoPreview ? (
+                      <img src={logoPreview} alt="Logo" className="h-full w-full object-cover" />
+                    ) : (
+                      <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <p className="text-xs font-medium text-foreground">
+                      {logoPreview
+                        ? 'Logotipo carregado com sucesso'
+                        : 'Selecione a imagem do seu logo'}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">PNG ou JPG até 5MB</p>
+                    <label className="inline-block cursor-pointer">
+                      <span className="text-xs font-bold text-emerald-600 hover:underline inline-flex items-center gap-1">
+                        <Upload className="h-3 w-3" /> Escolher arquivo
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
                 </div>
-                {isRestaurant ? (
-                  <>
-                    <div className="space-y-2">
-                      <Label>Possui câmara fria?</Label>
-                      <div className="flex gap-2">
-                        {['Sim', 'Não'].map((v) => (
-                          <Button
-                            key={v}
-                            variant={form.hasColdRoom === v ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setField('hasColdRoom', v)}
-                            className={cn(
-                              'min-h-[44px]',
-                              form.hasColdRoom === v && 'bg-emerald-600',
-                            )}
-                          >
-                            {v}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="ing">Principais ingredientes/insumos</Label>
-                      <Input
-                        id="ing"
-                        value={form.ingredients || ''}
-                        onChange={(e) => setField('ingredients', e.target.value)}
-                        placeholder="Ex: Salmão, Arroz, Tomate..."
-                        className="min-h-[44px]"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="cap">Capacidade de armazenamento</Label>
-                      <Input
-                        id="cap"
-                        value={form.storageCapacity || ''}
-                        onChange={(e) => setField('storageCapacity', e.target.value)}
-                        placeholder="Ex: 500kg câmara fria, 1000kg estoque seco"
-                        className="min-h-[44px]"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Volume médio de vendas mensais</Label>
-                      <Select
-                        value={form.salesVolume || ''}
-                        onValueChange={(v) => setField('salesVolume', v)}
-                      >
-                        <SelectTrigger className="min-h-[44px]">
-                          <SelectValue placeholder="Selecione..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="0-500">Até R$ 50.000</SelectItem>
-                          <SelectItem value="500-1000">R$ 50.001 - R$ 100.000</SelectItem>
-                          <SelectItem value="1000+">Acima de R$ 100.000</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="space-y-2">
-                      <Label>Categorias de produtos</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {supplierCategories.map((cat) => (
-                          <button
-                            key={cat}
-                            onClick={() => toggleCategory(cat)}
-                            className={cn(
-                              'px-3 py-2 rounded-full text-sm border transition-all min-h-[44px]',
-                              (form.categories || '').split(',').includes(cat)
-                                ? 'bg-emerald-600 text-white border-emerald-600'
-                                : 'border-border hover:border-emerald-400',
-                            )}
-                          >
-                            {cat}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="regions">Regiões de entrega</Label>
-                      <Input
-                        id="regions"
-                        value={form.deliveryRegions || ''}
-                        onChange={(e) => setField('deliveryRegions', e.target.value)}
-                        placeholder="Ex: Zona Sul, Centro, Grande SP"
-                        className="min-h-[44px]"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Prazo médio de entrega</Label>
-                      <Select
-                        value={form.deliveryLeadTime || ''}
-                        onValueChange={(v) => setField('deliveryLeadTime', v)}
-                      >
-                        <SelectTrigger className="min-h-[44px]">
-                          <SelectValue placeholder="Selecione..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1">1 dia</SelectItem>
-                          <SelectItem value="2">2 dias</SelectItem>
-                          <SelectItem value="3">3 dias</SelectItem>
-                          <SelectItem value="5">5 dias</SelectItem>
-                          <SelectItem value="7">7+ dias</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </>
-                )}
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setStep(1)} className="gap-2 min-h-[44px]">
+
+              {/* Team Invitation Step */}
+              {isRestaurant && (
+                <div className="space-y-3 pt-2 border-t">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-xs font-bold flex items-center gap-1.5">
+                        <Users className="h-4 w-4 text-emerald-600" />
+                        Convidar Equipe Inicial (Opcional)
+                      </Label>
+                      <p className="text-[11px] text-muted-foreground">
+                        Garçons, cozinheiros e bartenders receberão acesso direto
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAddTeamMember}
+                      className="h-8 text-xs gap-1 rounded-lg"
+                    >
+                      <Plus className="h-3 w-3" /> Adicionar
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {teamEmails.map((member, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <Input
+                          placeholder="email@funcionario.com"
+                          value={member.email}
+                          onChange={(e) => handleUpdateTeamMember(idx, 'email', e.target.value)}
+                          className="h-9 text-xs rounded-lg flex-1"
+                        />
+                        <Select
+                          value={member.role}
+                          onValueChange={(v) => handleUpdateTeamMember(idx, 'role', v)}
+                        >
+                          <SelectTrigger className="w-32 h-9 text-xs rounded-lg">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="waiter">Garçom</SelectItem>
+                            <SelectItem value="kitchen">Cozinha</SelectItem>
+                            <SelectItem value="bar">Barman</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {teamEmails.length > 1 && (
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => handleRemoveTeamMember(idx)}
+                            className="h-9 w-9 text-red-500 hover:text-red-600 rounded-lg"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {!isRestaurant && (
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold">Prazo Médio de Entrega</Label>
+                    <Select value={deliveryLeadTime} onValueChange={setDeliveryLeadTime}>
+                      <SelectTrigger className="h-10 rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 dia (Pronta entrega)</SelectItem>
+                        <SelectItem value="2">2 dias</SelectItem>
+                        <SelectItem value="3">3 dias</SelectItem>
+                        <SelectItem value="5">5 dias</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold">Região de Atendimento</Label>
+                    <Input
+                      placeholder="Ex: Grande SP, Capital..."
+                      value={deliveryRegions}
+                      onChange={(e) => setDeliveryRegions(e.target.value)}
+                      className="h-10 rounded-xl text-xs"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setStep(1)}
+                  className="gap-2 h-12 rounded-xl text-sm"
+                >
                   <ArrowLeft className="h-4 w-4" /> Voltar
                 </Button>
                 <Button
                   onClick={() => setStep(3)}
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 gap-2 min-h-[44px]"
+                  disabled={!restaurantName.trim()}
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 rounded-xl text-base gap-2"
                 >
                   Continuar <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -293,64 +512,156 @@ export default function Onboarding() {
           </Card>
         )}
 
+        {/* STEP 3: Categories Configuration */}
         {step === 3 && (
-          <div className="space-y-4 animate-fade-in-up">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold">Escolha seu plano</h2>
-              <p className="text-muted-foreground mt-1">
-                Comece grátis, faça upgrade quando precisar
-              </p>
-            </div>
+          <Card className="shadow-lg border-border/60 rounded-2xl animate-fade-in-up">
+            <CardContent className="pt-6 space-y-6">
+              <div className="space-y-2">
+                <Label className="text-sm font-bold flex items-center gap-1.5">
+                  <Layers className="h-4 w-4 text-emerald-600" />
+                  {isRestaurant
+                    ? 'Selecione as categorias do seu cardápio'
+                    : 'Selecione os segmentos de produtos que você fornece'}
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Você poderá criar novas ou editar a qualquer momento no painel.
+                </p>
+              </div>
+
+              {/* Category selector pills */}
+              <div className="flex flex-wrap gap-2.5">
+                {(isRestaurant ? defaultRestaurantCategories : supplierCategories).map((cat) => {
+                  const isSelected = selectedCategories.includes(cat)
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => toggleCategory(cat)}
+                      className={cn(
+                        'px-4 py-2.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5',
+                        isSelected
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm scale-105'
+                          : 'bg-background hover:bg-muted text-muted-foreground border-border',
+                      )}
+                    >
+                      {isSelected && <Check className="h-3.5 w-3.5" />}
+                      {cat}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Add custom category inline */}
+              <div className="flex gap-2 pt-2 border-t">
+                <Input
+                  placeholder="Criar outra categoria (ex: Happy Hour, Vinhos)..."
+                  value={newCatInput}
+                  onChange={(e) => setNewCatInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      addCustomCategory()
+                    }
+                  }}
+                  className="h-10 text-xs rounded-xl"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addCustomCategory}
+                  className="h-10 rounded-xl gap-1 text-xs font-bold"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Adicionar
+                </Button>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setStep(2)}
+                  className="gap-2 h-12 rounded-xl text-sm"
+                >
+                  <ArrowLeft className="h-4 w-4" /> Voltar
+                </Button>
+                <Button
+                  onClick={() => setStep(4)}
+                  disabled={selectedCategories.length === 0}
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 rounded-xl text-base gap-2"
+                >
+                  Continuar <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* STEP 4: Plan Selection & Finish */}
+        {step === 4 && (
+          <div className="space-y-5 animate-fade-in-up">
             <div className="grid gap-4 md:grid-cols-3">
               {plans.map((plan) => (
                 <Card
                   key={plan.name}
                   className={cn(
-                    'relative flex flex-col',
-                    plan.highlight && 'border-emerald-600 border-2 shadow-lg',
+                    'relative flex flex-col rounded-2xl border-2 transition-all',
+                    plan.highlight
+                      ? 'border-emerald-600 shadow-xl bg-card'
+                      : 'border-border/80 hover:border-emerald-400 bg-card/60',
                   )}
                 >
                   {plan.highlight && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-xs px-3 py-0.5 rounded-full">
-                      Mais popular
-                    </span>
+                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-[11px] font-extrabold px-3 py-0.5 rounded-full shadow-md flex items-center gap-1">
+                      <Sparkles className="h-3 w-3" /> Recomendado
+                    </div>
                   )}
-                  <CardContent className="pt-6 flex flex-col flex-1">
-                    <h3 className="font-bold text-lg">{plan.name}</h3>
-                    <p className="text-2xl font-bold mt-1">
-                      {plan.price}
-                      <span className="text-sm font-normal text-muted-foreground">
-                        {plan.period}
-                      </span>
-                    </p>
-                    <ul className="space-y-2 mt-4 flex-1">
+
+                  <CardContent className="pt-6 flex flex-col flex-1 p-5 space-y-4">
+                    <div>
+                      <h3 className="font-bold text-lg">{plan.name}</h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">{plan.description}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-3xl font-black text-foreground">
+                        {plan.price}
+                        <span className="text-xs font-normal text-muted-foreground ml-1">
+                          {plan.period}
+                        </span>
+                      </p>
+                    </div>
+
+                    <ul className="space-y-2 flex-1 pt-2 border-t text-xs">
                       {plan.features.map((f) => (
-                        <li key={f} className="flex items-start gap-2 text-sm">
-                          <Check className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                          {f}
+                        <li key={f} className="flex items-start gap-2">
+                          <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                          <span className="text-muted-foreground">{f}</span>
                         </li>
                       ))}
                     </ul>
+
                     <Button
                       onClick={() => handleFinish(plan.name)}
+                      disabled={loadingFinish}
                       className={cn(
-                        'w-full mt-4 min-h-[44px]',
-                        plan.highlight ? 'bg-emerald-600 hover:bg-emerald-700' : '',
+                        'w-full h-11 rounded-xl font-bold text-sm shadow-sm',
+                        plan.highlight
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                          : 'bg-muted hover:bg-muted/80 text-foreground',
                       )}
-                      variant={plan.highlight ? 'default' : 'outline'}
                     >
-                      Começar
+                      {loadingFinish ? 'Configurando...' : `Escolher ${plan.name}`}
                     </Button>
                   </CardContent>
                 </Card>
               ))}
             </div>
+
             <Button
               variant="ghost"
-              onClick={() => setStep(2)}
-              className="w-full gap-2 min-h-[44px]"
+              onClick={() => setStep(3)}
+              className="w-full gap-2 h-10 text-xs text-muted-foreground"
             >
-              <ArrowLeft className="h-4 w-4" /> Voltar
+              <ArrowLeft className="h-4 w-4" /> Voltar para categorias
             </Button>
           </div>
         )}
