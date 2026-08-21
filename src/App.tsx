@@ -23,6 +23,8 @@ import Users from './pages/Users'
 import SupplierDashboard from './pages/SupplierDashboard'
 import SupplierOrders from './pages/SupplierOrders'
 import SupplierClients from './pages/SupplierClients'
+import KitchenDashboard from './pages/KitchenDashboard'
+import WaiterDashboard from './pages/WaiterDashboard'
 import NotFound from './pages/NotFound'
 import Layout from './components/Layout'
 
@@ -45,7 +47,17 @@ function AuthRedirect() {
     )
   }
   if (isAuthenticated) {
-    const target = user?.role === 'supplier' ? '/supplier/dashboard' : '/dashboard'
+    const role = user?.role
+    let target = '/dashboard'
+    if (role === 'supplier') {
+      target = '/supplier/dashboard'
+    } else if (role === 'kitchen') {
+      target = '/cozinha'
+    } else if (role === 'waiter') {
+      target = '/garcom'
+    } else {
+      target = '/dashboard'
+    }
     return <Navigate to={target} replace />
   }
   return <Landing />
@@ -81,6 +93,8 @@ const App = () => (
               <Route path="/financeiro" element={<Financial />} />
               <Route path="/usuarios" element={<Users />} />
               <Route path="/configuracoes" element={<Settings />} />
+              <Route path="/cozinha" element={<KitchenDashboard />} />
+              <Route path="/garcom" element={<WaiterDashboard />} />
               <Route path="/supplier/dashboard" element={<SupplierDashboard />} />
               <Route path="/supplier/pedidos" element={<SupplierOrders />} />
               <Route path="/supplier/clientes" element={<SupplierClients />} />

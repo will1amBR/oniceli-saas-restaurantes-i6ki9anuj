@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ChefHat, Loader2, Store, Truck } from 'lucide-react'
+import { ChefHat, Loader2, Store, Truck, UtensilsCrossed, UserCheck } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,7 +12,7 @@ import pb from '@/lib/pocketbase/client'
 
 export default function Login() {
   const navigate = useNavigate()
-  const { signIn, signUp, isAuthenticated, user } = useAuth()
+  const { signIn, signUp, isAuthenticated } = useAuth()
   const [isSignUp, setIsSignUp] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -37,7 +37,17 @@ export default function Login() {
             /* ignore */
           }
         }
-        navigate(userRole === 'supplier' ? '/supplier/dashboard' : '/dashboard')
+
+        if (userRole === 'supplier') {
+          navigate('/supplier/dashboard')
+        } else if (userRole === 'kitchen') {
+          navigate('/cozinha')
+        } else if (userRole === 'waiter') {
+          navigate('/garcom')
+        } else {
+          // 'restaurant' ou outros
+          navigate('/dashboard')
+        }
       }
       run()
     }
@@ -157,18 +167,36 @@ export default function Login() {
                   size="sm"
                   onClick={() => demoLogin('restaurante@demo.oniceli.com')}
                   disabled={loading}
-                  className="gap-1.5"
+                  className="gap-1.5 text-xs"
                 >
-                  <Store className="h-3.5 w-3.5" /> Restaurante
+                  <Store className="h-3.5 w-3.5 text-emerald-600" /> Restaurante
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => demoLogin('fornecedor@demo.oniceli.com')}
                   disabled={loading}
-                  className="gap-1.5"
+                  className="gap-1.5 text-xs"
                 >
-                  <Truck className="h-3.5 w-3.5" /> Fornecedor
+                  <Truck className="h-3.5 w-3.5 text-blue-600" /> Fornecedor
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => demoLogin('cozinha@demo.oniceli.com')}
+                  disabled={loading}
+                  className="gap-1.5 text-xs"
+                >
+                  <UtensilsCrossed className="h-3.5 w-3.5 text-amber-600" /> Cozinha
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => demoLogin('garcom@demo.oniceli.com')}
+                  disabled={loading}
+                  className="gap-1.5 text-xs"
+                >
+                  <UserCheck className="h-3.5 w-3.5 text-purple-600" /> Garçom
                 </Button>
               </div>
             </div>

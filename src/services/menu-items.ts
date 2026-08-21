@@ -12,8 +12,13 @@ export interface MenuItem {
   user_id: string
 }
 
-export const getMenuItems = () =>
-  pb.collection('menu_items').getFullList<MenuItem>({ sort: '-created' })
+export const getMenuItems = (userId?: string) => {
+  const filter = userId ? `user_id = "${userId}"` : ''
+  return pb.collection('menu_items').getFullList<MenuItem>({
+    filter: filter || undefined,
+    sort: '-created',
+  })
+}
 
 export const createMenuItem = (data: Partial<MenuItem>) => pb.collection('menu_items').create(data)
 

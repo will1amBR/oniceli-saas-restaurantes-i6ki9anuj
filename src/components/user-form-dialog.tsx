@@ -130,10 +130,12 @@ export function UserFormDialog({ open, onOpenChange, editUser, onSaved }: Props)
               <Label htmlFor="user-role">Perfil</Label>
               <Select value={role} onValueChange={setRole}>
                 <SelectTrigger id="user-role">
-                  <SelectValue />
+                  <SelectValue placeholder="Selecione um perfil" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="restaurant">Restaurante</SelectItem>
+                  <SelectItem value="restaurant">Restaurante (Administrador)</SelectItem>
+                  <SelectItem value="kitchen">Cozinha (KDS / Preparo)</SelectItem>
+                  <SelectItem value="waiter">Garçom (Comandas & Salão)</SelectItem>
                   <SelectItem value="supplier">Fornecedor</SelectItem>
                 </SelectContent>
               </Select>

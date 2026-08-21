@@ -36,10 +36,24 @@ const restaurantNav = [
   { title: 'Cardápio', url: '/cardapios', icon: BookOpen },
   { title: 'Estoque', url: '/estoque', icon: Package },
   { title: 'Receitas', url: '/receitas', icon: UtensilsCrossed },
+  { title: 'Comandas (Salão)', url: '/garcom', icon: ClipboardList },
+  { title: 'Cozinha (KDS)', url: '/cozinha', icon: ChefHat },
   { title: 'Vendas', url: '/vendas', icon: TrendingUp },
   { title: 'Compras', url: '/compras', icon: ShoppingCart },
   { title: 'Fornecedores', url: '/fornecedores', icon: Truck },
   { title: 'Financeiro', url: '/financeiro', icon: LineChart },
+]
+
+const kitchenNav = [
+  { title: 'Cozinha (KDS)', url: '/cozinha', icon: ChefHat },
+  { title: 'Cardápio', url: '/cardapios', icon: BookOpen },
+  { title: 'Estoque', url: '/estoque', icon: Package },
+]
+
+const waiterNav = [
+  { title: 'Comandas & Pedidos', url: '/garcom', icon: ClipboardList },
+  { title: 'Cardápio', url: '/cardapios', icon: BookOpen },
+  { title: 'Status Cozinha', url: '/cozinha', icon: ChefHat },
 ]
 
 const supplierNav = [
@@ -51,18 +65,33 @@ const supplierNav = [
 export function AppSidebar() {
   const location = useLocation()
   const { user } = useAuth()
-  const isSupplier = user?.role === 'supplier'
-  const mainNav = isSupplier ? supplierNav : restaurantNav
+  const role = user?.role
+
+  let mainNav = restaurantNav
+  if (role === 'supplier') mainNav = supplierNav
+  else if (role === 'kitchen') mainNav = kitchenNav
+  else if (role === 'waiter') mainNav = waiterNav
+
+  const isSupplier = role === 'supplier'
+  const isStaff = role === 'kitchen' || role === 'waiter'
 
   return (
     <Sidebar>
       <SidebarHeader className="h-16 flex items-center justify-center border-b px-6 py-4">
         <Link
-          to="/dashboard"
-          className="flex items-center gap-2 font-bold text-xl text-primary w-full"
+          to={
+            role === 'supplier'
+              ? '/supplier/dashboard'
+              : role === 'kitchen'
+                ? '/cozinha'
+                : role === 'waiter'
+                  ? '/garcom'
+                  : '/dashboard'
+          }
+          className="flex items-center gap-2 font-bold text-xl text-primary w-full truncate"
         >
-          <ChefHat className="h-6 w-6 text-primary" />
-          <span>{user?.name || 'Serena Café'}</span>
+          <ChefHat className="h-6 w-6 text-primary shrink-0" />
+          <span className="truncate">{user?.name || 'Serena Café'}</span>
         </Link>
       </SidebarHeader>
 
@@ -85,7 +114,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {!isSupplier && (
+        {!isSupplier && !isStaff && (
           <SidebarGroup>
             <SidebarGroupLabel>Administração</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -118,9 +147,25 @@ export function AppSidebar() {
           className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
           variant="default"
         >
-          <Link to={isSupplier ? '/supplier/pedidos' : '/receitas'}>
+          <Link
+            to={
+              isSupplier
+                ? '/supplier/pedidos'
+                : role === 'waiter'
+                  ? '/garcom'
+                  : role === 'kitchen'
+                    ? '/cozinha'
+                    : '/receitas'
+            }
+          >
             <PlusCircle className="h-4 w-4" />
-            {isSupplier ? 'Ver Pedidos' : 'Nova Receita'}
+            {isSupplier
+              ? 'Ver Pedidos'
+              : role === 'waiter'
+                ? 'Nova Comanda'
+                : role === 'kitchen'
+                  ? 'Fila de Pedidos'
+                  : 'Nova Receita'}
           </Link>
         </Button>
       </SidebarFooter>

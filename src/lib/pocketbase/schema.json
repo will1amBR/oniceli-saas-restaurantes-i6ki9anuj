@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-06T16:19:05.156Z",
+  "generatedAt": "2026-08-21T04:19:37.073Z",
   "collections": [
     {
       "name": "users",
@@ -43,7 +43,14 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["restaurant", "supplier"]
+          "selectValues": ["restaurant", "supplier", "kitchen", "waiter"]
+        },
+        {
+          "name": "restaurant_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
         }
       ],
       "indexes": [
@@ -166,8 +173,8 @@
       "name": "menu_items",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && user_id = @request.auth.id",
-        "view": "@request.auth.id != '' && user_id = @request.auth.id",
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
         "create": "@request.auth.id != ''",
         "update": "@request.auth.id != '' && user_id = @request.auth.id",
         "delete": "@request.auth.id != '' && user_id = @request.auth.id"
@@ -246,8 +253,8 @@
       "name": "inventory",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && user_id = @request.auth.id",
-        "view": "@request.auth.id != '' && user_id = @request.auth.id",
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
         "create": "@request.auth.id != ''",
         "update": "@request.auth.id != '' && user_id = @request.auth.id",
         "delete": "@request.auth.id != '' && user_id = @request.auth.id"
@@ -651,6 +658,95 @@
         "CREATE INDEX idx_orders_restaurant_id ON orders (restaurant_id)",
         "CREATE INDEX idx_orders_supplier_id ON orders (supplier_id)",
         "CREATE INDEX idx_orders_status ON orders (status)"
+      ]
+    },
+    {
+      "name": "kitchen_orders",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "restaurant_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "waiter_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "table_number",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "customer_name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "items",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["pending", "preparing", "ready", "delivered", "cancelled"]
+        },
+        {
+          "name": "total_amount",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "stock_deducted",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_korders_restaurant ON kitchen_orders (restaurant_id)",
+        "CREATE INDEX idx_korders_status ON kitchen_orders (status)",
+        "CREATE INDEX idx_korders_created ON kitchen_orders (created)"
       ]
     }
   ]

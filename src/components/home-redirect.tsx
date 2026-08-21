@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
+import pb from '@/lib/pocketbase/client'
 import Landing from '@/pages/Landing'
 
 export function HomeRedirect() {
@@ -15,7 +16,12 @@ export function HomeRedirect() {
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />
+    const role = (pb.authStore.record as any)?.role
+    let target = '/dashboard'
+    if (role === 'supplier') target = '/supplier/dashboard'
+    else if (role === 'kitchen') target = '/cozinha'
+    else if (role === 'waiter') target = '/garcom'
+    return <Navigate to={target} replace />
   }
 
   return <Landing />

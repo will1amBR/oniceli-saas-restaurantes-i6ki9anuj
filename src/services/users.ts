@@ -1,13 +1,19 @@
 import pb from '@/lib/pocketbase/client'
 
+export type AppRole = 'restaurant' | 'supplier' | 'kitchen' | 'waiter'
+
 export interface User {
   id: string
   name: string
   email: string
-  role: 'restaurant' | 'supplier' | ''
+  role: AppRole | ''
+  restaurant_id?: string
   created: string
   updated: string
   avatar: string
+  expand?: {
+    restaurant_id?: { id: string; name: string }
+  }
 }
 
 export interface CreateUserPayload {
@@ -16,12 +22,14 @@ export interface CreateUserPayload {
   password: string
   passwordConfirm: string
   role: string
+  restaurant_id?: string
 }
 
 export interface UpdateUserPayload {
   name?: string
   email?: string
   role?: string
+  restaurant_id?: string
 }
 
 export const getUsers = () => pb.collection('users').getFullList<User>({ sort: '-created' })

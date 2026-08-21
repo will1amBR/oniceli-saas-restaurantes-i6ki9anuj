@@ -155,7 +155,7 @@ export function AiFinancialPanel() {
                     <span className="font-medium">R$ {dish.grossProfit}</span>
                   </div>
                 </div>
-                <Progress value={dish.margin} className="h-1.5" indicatorClassName={config.bg} />
+                <Progress value={dish.margin} className={cn('h-1.5', config.bg)} />
                 <p className="text-[10px] text-muted-foreground mt-1.5">
                   {dish.monthlyVolume} pedidos/mês · Lucro mensal: R${' '}
                   {dish.monthlyProfit.toLocaleString('pt-BR')}

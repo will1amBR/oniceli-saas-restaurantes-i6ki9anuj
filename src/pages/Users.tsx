@@ -41,7 +41,17 @@ function formatDate(dateStr: string): string {
 }
 
 function roleLabel(role: string): string {
-  return role === 'supplier' ? 'Fornecedor' : 'Restaurante'
+  switch (role) {
+    case 'supplier':
+      return 'Fornecedor'
+    case 'kitchen':
+      return 'Cozinha'
+    case 'waiter':
+      return 'Garçom'
+    case 'restaurant':
+    default:
+      return 'Restaurante'
+  }
 }
 
 export default function Users() {
@@ -165,7 +175,11 @@ export default function Users() {
                       className={
                         u.role === 'supplier'
                           ? 'bg-blue-100 text-blue-800'
-                          : 'bg-emerald-100 text-emerald-800'
+                          : u.role === 'kitchen'
+                            ? 'bg-amber-100 text-amber-800'
+                            : u.role === 'waiter'
+                              ? 'bg-purple-100 text-purple-800'
+                              : 'bg-emerald-100 text-emerald-800'
                       }
                     >
                       {roleLabel(u.role)}

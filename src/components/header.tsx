@@ -1,4 +1,4 @@
-import { Search, User, Store, Truck } from 'lucide-react'
+import { Search, User, Store, Truck, ChefHat } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Input } from '@/components/ui/input'
@@ -36,10 +36,29 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-1 md:gap-3 shrink-0">
-        <Button variant="outline" size="sm" onClick={toggleRole} className="hidden md:flex gap-2">
-          {role === 'restaurant' ? <Store className="h-4 w-4" /> : <Truck className="h-4 w-4" />}
-          <span className="text-xs font-medium">
-            {role === 'restaurant' ? 'Restaurante' : 'Fornecedor'}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={toggleRole}
+          className="hidden md:flex gap-2 text-xs"
+        >
+          {role === 'restaurant' ? (
+            <Store className="h-4 w-4 text-emerald-600" />
+          ) : role === 'kitchen' ? (
+            <ChefHat className="h-4 w-4 text-amber-600" />
+          ) : role === 'waiter' ? (
+            <User className="h-4 w-4 text-purple-600" />
+          ) : (
+            <Truck className="h-4 w-4 text-blue-600" />
+          )}
+          <span className="font-medium">
+            {role === 'restaurant'
+              ? 'Restaurante'
+              : role === 'kitchen'
+                ? 'Cozinha'
+                : role === 'waiter'
+                  ? 'Garçom'
+                  : 'Fornecedor'}
           </span>
         </Button>
 
