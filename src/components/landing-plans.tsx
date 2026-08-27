@@ -7,10 +7,9 @@ import { cn } from '@/lib/utils'
 const plans = [
   {
     name: 'Lite',
-    price: 'R$ 290',
-    priceRange: 'R$ 290 - 450',
+    priceRange: 'R$ 290 - R$ 450',
     period: '/mês',
-    description: 'Ideal para Dark Kitchens e pequenos restaurantes.',
+    description: 'Dark Kitchens e Pequenos Restaurantes.',
     target: 'Dark Kitchens e Pequenos Restaurantes',
     features: [
       'Gestão de estoque (até 200 itens)',
@@ -25,11 +24,10 @@ const plans = [
   },
   {
     name: 'Pro',
-    price: 'R$ 600',
-    priceRange: 'R$ 600 - 950',
+    priceRange: 'R$ 600 - R$ 950',
     period: '/mês',
-    description: 'Para restaurantes com faturamento acima de R$ 100k.',
-    target: 'Restaurantes com faturamento R$ 100k+',
+    description: 'Restaurantes com Faturamento acima de 100 mil.',
+    target: 'Restaurantes com Faturamento acima de 100 mil',
     features: [
       'Estoque ilimitado',
       'Fichas técnicas automatizadas',
@@ -44,10 +42,9 @@ const plans = [
   },
   {
     name: 'Enterprise',
-    price: 'R$ 2000',
-    priceRange: 'R$ 2000+',
+    priceRange: 'R$ 2.000+',
     period: '/mês',
-    description: 'Gestão multi-unidade e suporte prioritário para grandes operações.',
+    description: 'Redes, franquias e operações de alta escala.',
     target: 'Redes e Grandes Operações',
     features: [
       'Multi-loja e multi-usuário',

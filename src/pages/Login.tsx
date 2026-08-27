@@ -404,7 +404,7 @@ export default function Login() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => demoLogin('serena@teste.com.br', 'Skip@Pass')}
+                onClick={() => demoLogin('serena@teste1.com.br', 'vaiterron@')}
                 disabled={loading}
                 className="w-full gap-2 min-h-[40px] border-emerald-400/70 bg-emerald-50/50 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-200 dark:bg-emerald-950/20 font-bold rounded-xl"
               >

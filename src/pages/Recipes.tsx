@@ -90,16 +90,15 @@ export default function Recipes() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Cardápios</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Receitas</h1>
           <p className="text-muted-foreground mt-1">
-            Gerencie seu menu completo com preços, ingredientes e margens.
+            Gerencie suas receitas e fichas técnicas com custos, ingredientes e margens de lucro.
           </p>
         </div>
         <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={openCreate}>
-          <Plus className="mr-2 h-4 w-4" /> Novo Item
+          <Plus className="mr-2 h-4 w-4" /> Nova Receita
         </Button>
       </div>
-
       {recipes.length === 0 && !loading ? (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
