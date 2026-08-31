@@ -35,7 +35,9 @@ const channelConfig = {
   internal: { icon: Monitor, label: 'Sistema' },
   push: { icon: Smartphone, label: 'Push' },
   sms: { icon: MessageSquare, label: 'SMS' },
-}
+  email: { icon: Monitor, label: 'E-mail' },
+  whatsapp: { icon: Smartphone, label: 'WhatsApp' },
+} as Record<string, { icon: any; label: string }>
 
 export function NotificationCenter() {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotificationsStore()
@@ -70,15 +72,15 @@ export function NotificationCenter() {
               </Button>
             )}
           </div>
-          <div className="flex gap-2 mt-1">
+          <div className="flex flex-wrap gap-1.5 mt-1">
             <Badge variant="secondary" className="text-[10px]">
               <Monitor className="mr-1 h-3 w-3" /> Sistema
             </Badge>
             <Badge variant="secondary" className="text-[10px]">
-              <Smartphone className="mr-1 h-3 w-3" /> Push
+              <Smartphone className="mr-1 h-3 w-3" /> WhatsApp
             </Badge>
             <Badge variant="secondary" className="text-[10px]">
-              <MessageSquare className="mr-1 h-3 w-3" /> SMS
+              <MessageSquare className="mr-1 h-3 w-3" /> E-mail
             </Badge>
           </div>
         </SheetHeader>

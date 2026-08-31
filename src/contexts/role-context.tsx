@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 
-export type Role = 'restaurant' | 'supplier' | 'kitchen' | 'waiter' | 'bar'
+export type Role = 'restaurant' | 'supplier' | 'kitchen' | 'waiter' | 'bar' | 'bpo'
 
 interface RoleContextValue {
   role: Role
@@ -24,7 +24,8 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   const toggleRole = () =>
     setRole((prev) => {
       if (prev === 'restaurant') return 'supplier'
-      if (prev === 'supplier') return 'kitchen'
+      if (prev === 'supplier') return 'bpo'
+      if (prev === 'bpo') return 'kitchen'
       if (prev === 'kitchen') return 'bar'
       if (prev === 'bar') return 'waiter'
       return 'restaurant'

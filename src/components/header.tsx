@@ -1,4 +1,14 @@
-import { Search, User, Store, Truck, ChefHat, UtensilsCrossed, Wine, Coffee } from 'lucide-react'
+import {
+  Search,
+  User,
+  Store,
+  Truck,
+  ChefHat,
+  UtensilsCrossed,
+  Wine,
+  Coffee,
+  Briefcase,
+} from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Input } from '@/components/ui/input'
@@ -44,6 +54,8 @@ export function Header() {
         >
           {role === 'restaurant' ? (
             <ChefHat className="h-4 w-4" />
+          ) : role === 'bpo' ? (
+            <Briefcase className="h-4 w-4" />
           ) : role === 'kitchen' ? (
             <UtensilsCrossed className="h-4 w-4" />
           ) : role === 'bar' ? (
@@ -56,13 +68,15 @@ export function Header() {
           <span className="hidden sm:inline">
             {role === 'restaurant'
               ? 'Restaurante'
-              : role === 'kitchen'
-                ? 'Cozinha'
-                : role === 'bar'
-                  ? 'Bar'
-                  : role === 'waiter'
-                    ? 'Garçom'
-                    : 'Fornecedor'}
+              : role === 'bpo'
+                ? 'Parceiro BPO'
+                : role === 'kitchen'
+                  ? 'Cozinha'
+                  : role === 'bar'
+                    ? 'Bar'
+                    : role === 'waiter'
+                      ? 'Garçom'
+                      : 'Fornecedor'}
           </span>{' '}
         </Button>
 

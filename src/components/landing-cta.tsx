@@ -32,7 +32,7 @@ export function LandingCTA() {
         <div className="container mx-auto px-4 max-w-6xl flex flex-col md:flex-row items-center justify-between gap-4">
           <span className="font-bold text-white dark:text-slate-100">Oniceli</span>
           <p className="text-sm text-slate-400">
-            © 2025 Oniceli SaaS · Gestão Inteligente de Restaurantes
+            © 2026 Oniceli SaaS · Gestão Inteligente de Restaurantes
           </p>
         </div>
       </footer>

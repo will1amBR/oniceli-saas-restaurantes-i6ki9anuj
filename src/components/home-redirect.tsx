@@ -19,6 +19,7 @@ export function HomeRedirect() {
     const role = (pb.authStore.record as any)?.role
     let target = '/dashboard'
     if (role === 'supplier') target = '/supplier/dashboard'
+    else if (role === 'bpo') target = '/bpo/dashboard'
     else if (role === 'kitchen') target = '/cozinha'
     else if (role === 'bar') target = '/bar'
     else if (role === 'waiter') target = '/garcom'

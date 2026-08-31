@@ -18,6 +18,9 @@ import {
   Sparkles,
   Smartphone,
   ExternalLink,
+  Briefcase,
+  BellRing,
+  Handshake,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -60,6 +63,15 @@ const supplierNav = [
   { title: 'Configurações', url: '/configuracoes', icon: Settings },
 ]
 
+const bpoNav = [
+  { title: 'Painel Parceiro BPO', url: '/bpo/dashboard', icon: Briefcase },
+  { title: 'Clientes Vinculados', url: '/bpo/clientes', icon: Building2, badge: '2026' },
+  { title: 'Alertas de Recompra', url: '/bpo/recompra', icon: BellRing, badge: 'Multi-Canal' },
+  { title: 'Compras Coletivas', url: '/compras', icon: ShoppingCart, badge: 'Lotes' },
+  { title: 'Comissões & MRR', url: '/financeiro', icon: DollarSign },
+  { title: 'Configurações', url: '/configuracoes', icon: Settings },
+]
+
 export function AppSidebar() {
   const location = useLocation()
   const { role } = useRole()
@@ -67,7 +79,9 @@ export function AppSidebar() {
 
   // Pick nav by role
   let navItems = restaurantNav
-  if (role === 'supplier') {
+  if (role === 'bpo') {
+    navItems = bpoNav
+  } else if (role === 'supplier') {
     navItems = supplierNav
   } else if (role === 'kitchen') {
     navItems = [
@@ -92,6 +106,10 @@ export function AppSidebar() {
     restaurant: {
       label: 'Restaurante',
       class: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
+    },
+    bpo: {
+      label: 'Parceiro BPO',
+      class: 'bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300',
     },
     supplier: {
       label: 'Fornecedor',

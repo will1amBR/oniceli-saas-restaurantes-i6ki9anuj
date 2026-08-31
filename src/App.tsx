@@ -27,6 +27,7 @@ import SupplierClients from './pages/SupplierClients'
 import KitchenDashboard from './pages/KitchenDashboard'
 import BarDashboard from './pages/BarDashboard'
 import WaiterDashboard from './pages/WaiterDashboard'
+import BpoDashboard from './pages/BpoDashboard'
 import NotFound from './pages/NotFound'
 import Layout from './components/Layout'
 
@@ -53,6 +54,8 @@ function AuthRedirect() {
     let target = '/dashboard'
     if (role === 'supplier') {
       target = '/supplier/dashboard'
+    } else if (role === 'bpo') {
+      target = '/bpo/dashboard'
     } else if (role === 'kitchen') {
       target = '/cozinha'
     } else if (role === 'bar') {
@@ -105,6 +108,9 @@ const App = () => (
               <Route path="/supplier/dashboard" element={<SupplierDashboard />} />
               <Route path="/supplier/pedidos" element={<SupplierOrders />} />
               <Route path="/supplier/clientes" element={<SupplierClients />} />
+              <Route path="/bpo/dashboard" element={<BpoDashboard />} />
+              <Route path="/bpo/clientes" element={<BpoDashboard />} />
+              <Route path="/bpo/recompra" element={<BpoDashboard />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
