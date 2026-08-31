@@ -212,80 +212,82 @@ export default function KitchenDashboard() {
       ) : error ? (
         <ErrorState onRetry={() => loadOrders()} />
       ) : filteredOrders.length === 0 ? (
-        <Card className="border-dashed py-20 text-center rounded-2xl">
+        <Card className="border-dashed py-20 text-center rounded-2xl bg-card">
           <CardContent className="space-y-3">
             <div className="p-4 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 inline-flex">
-              <CheckCircle2 className="h-10 w-10" />
+              <CheckCircle2 className="h-12 w-12" />
             </div>
-            <h3 className="font-bold text-lg">Cozinha sem pedidos no momento!</h3>
-            <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+            <h3 className="font-black text-xl">Cozinha sem pedidos no momento!</h3>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
               Quando novos pratos forem lançados pelos garçons ou clientes, eles entrarão na coluna
               de Triagem instantaneamente.
             </p>
           </CardContent>
         </Card>
       ) : viewMode === 'kanban' ? (
-        /* Kanban Board with 4 Columns */
-        <div className="flex gap-4 overflow-x-auto pb-4 pt-1 snap-x no-scrollbar items-start">
-          {/* Column 1: Pendentes / Triagem */}
-          <KitchenKanbanColumn
-            id="pending"
-            title="Pendentes (Triagem)"
-            icon={Clock}
-            badgeColor="bg-amber-600 text-white"
-            headerBg="bg-amber-500/10 dark:bg-amber-950/20"
-            borderAccent="border-amber-400/80 dark:border-amber-500/40"
-            orders={pendingOrders}
-            onStatusChange={handleStatusChange}
-            onDropOrder={handleDropOrder}
-            draggedOrderId={draggedOrderId}
-            setDraggedOrderId={setDraggedOrderId}
-          />
+        /* Tablet & Desktop Optimized Kanban Board with 4 Columns and Touch-Snap */
+        <div className="w-full overflow-x-auto pb-6 pt-1 snap-x snap-mandatory touch-pan-x no-scrollbar -mx-2 px-2 sm:mx-0 sm:px-0">
+          <div className="flex gap-4 min-w-full lg:min-w-0 items-start">
+            {/* Column 1: Pendentes / Triagem */}
+            <KitchenKanbanColumn
+              id="pending"
+              title="Pendentes (Triagem)"
+              icon={Clock}
+              badgeColor="bg-amber-600 text-white"
+              headerBg="bg-amber-500/10 dark:bg-amber-950/30"
+              borderAccent="border-amber-400/80 dark:border-amber-500/40"
+              orders={pendingOrders}
+              onStatusChange={handleStatusChange}
+              onDropOrder={handleDropOrder}
+              draggedOrderId={draggedOrderId}
+              setDraggedOrderId={setDraggedOrderId}
+            />
 
-          {/* Column 2: Em Cozimento */}
-          <KitchenKanbanColumn
-            id="preparing"
-            title="Em Cozimento"
-            icon={Flame}
-            badgeColor="bg-blue-600 text-white"
-            headerBg="bg-blue-500/10 dark:bg-blue-950/20"
-            borderAccent="border-blue-500/80 dark:border-blue-500/40"
-            orders={preparingOrders}
-            onStatusChange={handleStatusChange}
-            onDropOrder={handleDropOrder}
-            draggedOrderId={draggedOrderId}
-            setDraggedOrderId={setDraggedOrderId}
-          />
+            {/* Column 2: Em Cozimento */}
+            <KitchenKanbanColumn
+              id="preparing"
+              title="Em Cozimento"
+              icon={Flame}
+              badgeColor="bg-blue-600 text-white"
+              headerBg="bg-blue-500/10 dark:bg-blue-950/30"
+              borderAccent="border-blue-500/80 dark:border-blue-500/40"
+              orders={preparingOrders}
+              onStatusChange={handleStatusChange}
+              onDropOrder={handleDropOrder}
+              draggedOrderId={draggedOrderId}
+              setDraggedOrderId={setDraggedOrderId}
+            />
 
-          {/* Column 3: Prontos */}
-          <KitchenKanbanColumn
-            id="ready"
-            title="Prontos para Servir"
-            icon={CheckCircle2}
-            badgeColor="bg-emerald-600 text-white"
-            headerBg="bg-emerald-500/10 dark:bg-emerald-950/20"
-            borderAccent="border-emerald-500/80 dark:border-emerald-500/40"
-            orders={readyOrders}
-            onStatusChange={handleStatusChange}
-            onDropOrder={handleDropOrder}
-            draggedOrderId={draggedOrderId}
-            setDraggedOrderId={setDraggedOrderId}
-          />
+            {/* Column 3: Prontos */}
+            <KitchenKanbanColumn
+              id="ready"
+              title="Prontos para Servir"
+              icon={CheckCircle2}
+              badgeColor="bg-emerald-600 text-white"
+              headerBg="bg-emerald-500/10 dark:bg-emerald-950/30"
+              borderAccent="border-emerald-500/80 dark:border-emerald-500/40"
+              orders={readyOrders}
+              onStatusChange={handleStatusChange}
+              onDropOrder={handleDropOrder}
+              draggedOrderId={draggedOrderId}
+              setDraggedOrderId={setDraggedOrderId}
+            />
 
-          {/* Column 4: Entregues */}
-          <KitchenKanbanColumn
-            id="delivered"
-            title="Entregues à Mesa"
-            icon={Check}
-            badgeColor="bg-slate-700 text-white"
-            headerBg="bg-slate-500/10 dark:bg-slate-950/20"
-            borderAccent="border-slate-300 dark:border-slate-800"
-            orders={deliveredOrders}
-            onStatusChange={handleStatusChange}
-            onDropOrder={handleDropOrder}
-            draggedOrderId={draggedOrderId}
-            setDraggedOrderId={setDraggedOrderId}
-          />
+            {/* Column 4: Entregues */}
+            <KitchenKanbanColumn
+              id="delivered"
+              title="Entregues à Mesa"
+              icon={Check}
+              badgeColor="bg-slate-700 text-white"
+              headerBg="bg-slate-500/10 dark:bg-slate-950/30"
+              borderAccent="border-slate-300 dark:border-slate-800"
+              orders={deliveredOrders}
+              onStatusChange={handleStatusChange}
+              onDropOrder={handleDropOrder}
+              draggedOrderId={draggedOrderId}
+              setDraggedOrderId={setDraggedOrderId}
+            />
+          </div>
         </div>
       ) : (
         /* Grid View Alternative */
