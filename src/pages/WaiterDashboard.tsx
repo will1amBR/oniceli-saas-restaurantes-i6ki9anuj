@@ -31,6 +31,8 @@ import { getErrorMessage } from '@/lib/pocketbase/errors'
 import { StatusBadge } from '@/components/status-badge'
 import { ErrorState } from '@/components/error-state'
 import { TableSkeleton } from '@/components/loading-skeletons'
+import { KitchenMetricsBar } from '@/components/kitchen-metrics-bar'
+import { useKitchenMetrics } from '@/hooks/use-kitchen-metrics'
 
 export default function WaiterDashboard() {
   const { toast } = useToast()
@@ -43,9 +45,12 @@ export default function WaiterDashboard() {
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
 
-  // Live active orders for tables
+  // Live orders for calculations and tables
+  const [allKitchenOrders, setAllKitchenOrders] = useState<KitchenOrder[]>([])
   const [activeKitchenOrders, setActiveKitchenOrders] = useState<KitchenOrder[]>([])
   const [activeBarOrders, setActiveBarOrders] = useState<BarOrder[]>([])
+
+  const kitchenMetrics = useKitchenMetrics(allKitchenOrders)
 
   const loadData = async () => {
     try {
@@ -56,6 +61,7 @@ export default function WaiterDashboard() {
         getBarOrders(),
       ])
       setMenuItems(items.filter((i) => i.active !== false))
+      setAllKitchenOrders(kOrders)
       setActiveKitchenOrders(kOrders.filter((o) => o.status !== 'delivered'))
       setActiveBarOrders(bOrders.filter((o) => o.status !== 'delivered'))
     } catch {
@@ -253,6 +259,53 @@ export default function WaiterDashboard() {
           ))}
         </div>
       </div>
+
+      {/* Real-time Kitchen Status Panel for Waiters (Tempo médio + Fila + Semáforo) */}
+      <KitchenMetricsBar metrics={kitchenMetrics} compact={true} />
+
+      {/* Live Table Orders Tracker Alert for Waiter */}
+      {activeKitchenOrders.length > 0 && (
+        <div className="bg-card border rounded-2xl p-3.5 shadow-2xs">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <ChefHat className="h-4 w-4 text-amber-600" />
+              Pratos em Andamento no Salão ({activeKitchenOrders.length})
+            </h4>
+            <span className="text-[11px] text-muted-foreground font-medium">
+              Atualizado em tempo real
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+            {activeKitchenOrders.slice(0, 10).map((k) => {
+              const mins = k.created
+                ? Math.max(0, Math.floor((Date.now() - new Date(k.created).getTime()) / 60000))
+                : 0
+              const isUrgent = mins >= 20 && k.status !== 'ready'
+              return (
+                <div
+                  key={k.id}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs shrink-0 ${
+                    k.status === 'ready'
+                      ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-800 dark:text-emerald-300 font-bold animate-pulse'
+                      : isUrgent
+                        ? 'bg-rose-500/10 border-rose-500/40 text-rose-800 dark:text-rose-300'
+                        : 'bg-muted/40 border-border text-foreground'
+                  }`}
+                >
+                  <span className="font-extrabold">Mesa {k.table_number || '01'}</span>
+                  <StatusBadge
+                    status={k.status}
+                    showIcon={false}
+                    className="text-[10px] py-0 px-1.5"
+                  />
+                  <span className="font-mono text-[11px] text-muted-foreground">{mins} min</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left column: Menu picker (8 cols) */}

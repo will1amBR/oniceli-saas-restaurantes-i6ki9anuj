@@ -10,40 +10,52 @@ import {
   Sparkles,
   Search,
   Filter,
+  Layers,
+  LayoutGrid,
+  Kanban as KanbanIcon,
+  Archive,
+  RefreshCw,
 } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
 import { useRealtime } from '@/hooks/use-realtime'
 import {
   getKitchenOrders,
   updateKitchenOrderStatus,
   type KitchenOrder,
-  type KitchenOrderItem,
+  type KitchenOrderStatus,
 } from '@/services/kitchen-orders'
 import { getErrorMessage } from '@/lib/pocketbase/errors'
 import { OrderCardSkeleton } from '@/components/loading-skeletons'
 import { ErrorState } from '@/components/error-state'
-import { StatusBadge } from '@/components/status-badge'
+import { KitchenMetricsBar } from '@/components/kitchen-metrics-bar'
+import { KitchenKanbanColumn, KitchenKanbanCard } from '@/components/kitchen-kanban'
+import { useKitchenMetrics } from '@/hooks/use-kitchen-metrics'
 
 export default function KitchenDashboard() {
   const { toast } = useToast()
   const [orders, setOrders] = useState<KitchenOrder[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState(false)
-  const [filter, setFilter] = useState<'all' | 'pending' | 'preparing' | 'ready'>('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [draggedOrderId, setDraggedOrderId] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<'kanban' | 'grid'>('kanban')
 
-  const loadOrders = async () => {
+  const loadOrders = async (isManualRefresh = false) => {
     try {
+      if (isManualRefresh) setRefreshing(true)
       setError(false)
       const data = await getKitchenOrders()
-      // Sort: pending first, then preparing, then ready
       setOrders(data)
     } catch {
       setError(true)
     } finally {
       setLoading(false)
+      if (isManualRefresh) setRefreshing(false)
     }
   }
 
@@ -53,240 +65,234 @@ export default function KitchenDashboard() {
 
   useRealtime('kitchen_orders', () => loadOrders())
 
-  const handleStatusChange = async (
-    order: KitchenOrder,
-    newStatus: 'pending' | 'preparing' | 'ready' | 'delivered',
-  ) => {
+  const metrics = useKitchenMetrics(orders)
+
+  const handleStatusChange = async (order: KitchenOrder, newStatus: KitchenOrderStatus) => {
     try {
+      // Optimistic UI update
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === order.id ? { ...o, status: newStatus, updated: new Date().toISOString() } : o,
+        ),
+      )
+
       await updateKitchenOrderStatus(order.id, newStatus)
+
+      const statusLabels: Record<KitchenOrderStatus, string> = {
+        pending: 'PENDENTE (TRIAGEM)',
+        preparing: 'EM COZIMENTO',
+        ready: 'PRONTO PARA SERVIR (Estoque Baixado)',
+        delivered: 'ENTREGUE À MESA',
+        cancelled: 'CANCELADO',
+      }
 
       toast({
         title: 'Status atualizado!',
-        description: `Mesa ${order.table_number || '01'} agora está: ${newStatus.toUpperCase()}`,
-        className: 'bg-emerald-600 text-white font-bold',
+        description: `Mesa ${order.table_number || '01'} ➔ ${statusLabels[newStatus]}`,
+        className:
+          newStatus === 'ready'
+            ? 'bg-emerald-600 text-white font-bold'
+            : newStatus === 'preparing'
+              ? 'bg-blue-600 text-white font-bold'
+              : 'bg-foreground text-background font-bold',
       })
       loadOrders()
     } catch (err) {
       toast({
-        title: 'Erro ao atualizar',
+        title: 'Erro ao atualizar pedido',
         description: getErrorMessage(err),
         variant: 'destructive',
       })
+      loadOrders()
     }
   }
 
+  const handleDropOrder = async (orderId: string, targetStatus: KitchenOrderStatus) => {
+    const order = orders.find((o) => o.id === orderId)
+    if (!order) return
+    if (order.status === targetStatus) return
+    await handleStatusChange(order, targetStatus)
+  }
+
+  // Filtered orders
   const filteredOrders = orders.filter((o) => {
-    if (filter === 'all') return o.status !== 'delivered'
-    return o.status === filter
+    if (!searchQuery) return true
+    const q = searchQuery.toLowerCase()
+    const matchTable = (o.table_number || '').toLowerCase().includes(q)
+    const matchCustomer = (o.customer_name || '').toLowerCase().includes(q)
+    let matchItem = false
+    try {
+      const itemsList = Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]')
+      matchItem = itemsList.some((it: any) => (it.name || '').toLowerCase().includes(q))
+    } catch {
+      /* ignore */
+    }
+    return matchTable || matchCustomer || matchItem
   })
 
-  const pendingCount = orders.filter((o) => o.status === 'pending').length
-  const preparingCount = orders.filter((o) => o.status === 'preparing').length
-  const readyCount = orders.filter((o) => o.status === 'ready').length
-
-  const getElapsedTime = (createdStr: string) => {
-    if (!createdStr) return '0 min'
-    const created = new Date(createdStr)
-    const diffMin = Math.floor((Date.now() - created.getTime()) / 60000)
-    return `${diffMin} min`
-  }
+  // Kanban Column Buckets (Fixed Order: Pendentes (Triagem) -> Em Cozimento -> Prontos -> Entregues)
+  const pendingOrders = filteredOrders.filter((o) => o.status === 'pending')
+  const preparingOrders = filteredOrders.filter((o) => o.status === 'preparing')
+  const readyOrders = filteredOrders.filter((o) => o.status === 'ready')
+  const deliveredOrders = filteredOrders.filter((o) => o.status === 'delivered')
 
   return (
     <div className="space-y-6 pb-20">
-      {/* Header with quick stats */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card p-4 sm:p-5 rounded-2xl border border-border/60 shadow-sm">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card p-4 sm:p-5 rounded-2xl border border-border/60 shadow-xs">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-2">
-            KDS Cozinha
-            <Badge className="bg-amber-600 text-white text-[10px] font-bold">Display KDS</Badge>
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-2">
+              <ChefHat className="h-7 w-7 text-amber-600" />
+              KDS Cozinha & Triagem
+            </h1>
+            <Badge className="bg-amber-600 text-white text-[10px] font-bold">Kanban KDS</Badge>
+          </div>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Monitor de comandas e tempo de preparo de pratos em tempo real.
+            Triagem ágil de pedidos, esteira de cozimento e métricas de tempo em tempo real.
           </p>
         </div>
 
-        {/* Filter Badges */}
-        <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto">
-          <button
-            onClick={() => setFilter('all')}
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] ${
-              filter === 'all'
-                ? 'bg-foreground text-background shadow-md'
-                : 'bg-muted text-muted-foreground'
-            }`}
+        {/* Header Controls (Search & View Switch & Refresh) */}
+        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+          <div className="relative flex-1 sm:w-60">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar mesa ou prato..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-10 text-xs rounded-xl"
+            />
+          </div>
+
+          <div className="flex items-center border rounded-xl p-1 bg-muted/40 shrink-0">
+            <button
+              onClick={() => setViewMode('kanban')}
+              title="Visualização Kanban de Triagem"
+              className={`p-2 rounded-lg text-xs font-bold transition-all ${
+                viewMode === 'kanban'
+                  ? 'bg-background shadow-xs text-foreground font-black'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <KanbanIcon className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('grid')}
+              title="Visualização em Grade"
+              className={`p-2 rounded-lg text-xs font-bold transition-all ${
+                viewMode === 'grid'
+                  ? 'bg-background shadow-xs text-foreground font-black'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+          </div>
+
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => loadOrders(true)}
+            disabled={refreshing}
+            className="h-10 w-10 rounded-xl shrink-0"
+            title="Atualizar Pedidos"
           >
-            Todos ({pendingCount + preparingCount + readyCount})
-          </button>
-          <button
-            onClick={() => setFilter('pending')}
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] flex items-center gap-1.5 ${
-              filter === 'pending'
-                ? 'bg-amber-600 text-white shadow-md'
-                : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300'
-            }`}
-          >
-            <Clock className="h-3.5 w-3.5" /> Pendentes ({pendingCount})
-          </button>
-          <button
-            onClick={() => setFilter('preparing')}
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] flex items-center gap-1.5 ${
-              filter === 'preparing'
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300'
-            }`}
-          >
-            <Flame className="h-3.5 w-3.5" /> Em Preparo ({preparingCount})
-          </button>
-          <button
-            onClick={() => setFilter('ready')}
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] flex items-center gap-1.5 ${
-              filter === 'ready'
-                ? 'bg-emerald-600 text-white shadow-md'
-                : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
-            }`}
-          >
-            <CheckCircle2 className="h-3.5 w-3.5" /> Prontos ({readyCount})
-          </button>
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          </Button>
         </div>
       </div>
 
-      {/* Main Grid of Order Tickets */}
+      {/* Real-time Kitchen Metrics Bar & Traffic Light */}
+      <KitchenMetricsBar metrics={metrics} />
+
+      {/* Main Content: Kanban or Grid */}
       {loading ? (
         <OrderCardSkeleton />
       ) : error ? (
-        <ErrorState onRetry={loadOrders} />
+        <ErrorState onRetry={() => loadOrders()} />
       ) : filteredOrders.length === 0 ? (
         <Card className="border-dashed py-20 text-center rounded-2xl">
           <CardContent className="space-y-3">
             <div className="p-4 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 inline-flex">
               <CheckCircle2 className="h-10 w-10" />
             </div>
-            <h3 className="font-bold text-lg">Cozinha sem pedidos nesta fila!</h3>
+            <h3 className="font-bold text-lg">Cozinha sem pedidos no momento!</h3>
             <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-              Quando novos pratos forem solicitados pelos clientes ou garçons, eles aparecerão aqui
-              instantaneamente.
+              Quando novos pratos forem lançados pelos garçons ou clientes, eles entrarão na coluna
+              de Triagem instantaneamente.
             </p>
           </CardContent>
         </Card>
+      ) : viewMode === 'kanban' ? (
+        /* Kanban Board with 4 Columns */
+        <div className="flex gap-4 overflow-x-auto pb-4 pt-1 snap-x no-scrollbar items-start">
+          {/* Column 1: Pendentes / Triagem */}
+          <KitchenKanbanColumn
+            id="pending"
+            title="Pendentes (Triagem)"
+            icon={Clock}
+            badgeColor="bg-amber-600 text-white"
+            headerBg="bg-amber-500/10 dark:bg-amber-950/20"
+            borderAccent="border-amber-400/80 dark:border-amber-500/40"
+            orders={pendingOrders}
+            onStatusChange={handleStatusChange}
+            onDropOrder={handleDropOrder}
+            draggedOrderId={draggedOrderId}
+            setDraggedOrderId={setDraggedOrderId}
+          />
+
+          {/* Column 2: Em Cozimento */}
+          <KitchenKanbanColumn
+            id="preparing"
+            title="Em Cozimento"
+            icon={Flame}
+            badgeColor="bg-blue-600 text-white"
+            headerBg="bg-blue-500/10 dark:bg-blue-950/20"
+            borderAccent="border-blue-500/80 dark:border-blue-500/40"
+            orders={preparingOrders}
+            onStatusChange={handleStatusChange}
+            onDropOrder={handleDropOrder}
+            draggedOrderId={draggedOrderId}
+            setDraggedOrderId={setDraggedOrderId}
+          />
+
+          {/* Column 3: Prontos */}
+          <KitchenKanbanColumn
+            id="ready"
+            title="Prontos para Servir"
+            icon={CheckCircle2}
+            badgeColor="bg-emerald-600 text-white"
+            headerBg="bg-emerald-500/10 dark:bg-emerald-950/20"
+            borderAccent="border-emerald-500/80 dark:border-emerald-500/40"
+            orders={readyOrders}
+            onStatusChange={handleStatusChange}
+            onDropOrder={handleDropOrder}
+            draggedOrderId={draggedOrderId}
+            setDraggedOrderId={setDraggedOrderId}
+          />
+
+          {/* Column 4: Entregues */}
+          <KitchenKanbanColumn
+            id="delivered"
+            title="Entregues à Mesa"
+            icon={Check}
+            badgeColor="bg-slate-700 text-white"
+            headerBg="bg-slate-500/10 dark:bg-slate-950/20"
+            borderAccent="border-slate-300 dark:border-slate-800"
+            orders={deliveredOrders}
+            onStatusChange={handleStatusChange}
+            onDropOrder={handleDropOrder}
+            draggedOrderId={draggedOrderId}
+            setDraggedOrderId={setDraggedOrderId}
+          />
+        </div>
       ) : (
+        /* Grid View Alternative */
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filteredOrders.map((order) => {
-            let itemsList: KitchenOrderItem[] = []
-            if (Array.isArray(order.items)) {
-              itemsList = order.items
-            } else if (typeof order.items === 'string') {
-              try {
-                itemsList = JSON.parse(order.items || '[]')
-              } catch {
-                itemsList = []
-              }
-            }
-
-            const isPending = order.status === 'pending'
-            const isPreparing = order.status === 'preparing'
-            const isReady = order.status === 'ready'
-            const elapsed = getElapsedTime(order.created)
-
-            return (
-              <Card
-                key={order.id}
-                className={`rounded-2xl border-2 transition-all flex flex-col justify-between shadow-sm hover:shadow-md ${
-                  isPending
-                    ? 'border-amber-400/80 bg-card'
-                    : isPreparing
-                      ? 'border-blue-500 bg-blue-50/10 dark:bg-blue-950/10'
-                      : 'border-emerald-500 bg-emerald-50/10 dark:bg-emerald-950/10'
-                }`}
-              >
-                <div>
-                  {/* Card Header with Table & Time */}
-                  <CardHeader className="p-4 pb-3 border-b bg-muted/20">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-black text-xl text-foreground">
-                            Mesa {order.table_number || '01'}
-                          </h3>
-                          <StatusBadge status={order.status} />
-                        </div>
-                        {order.customer_name && (
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            Cliente:{' '}
-                            <strong className="text-foreground">{order.customer_name}</strong>
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-1 text-xs font-mono font-bold bg-background border px-2.5 py-1 rounded-xl shadow-xs">
-                        <Clock className="h-3.5 w-3.5 text-amber-600" />
-                        <span>{elapsed}</span>
-                      </div>
-                    </div>
-                  </CardHeader>
-
-                  {/* Items list */}
-                  <CardContent className="p-4 space-y-2.5">
-                    {itemsList.map((it: any, i: number) => (
-                      <div
-                        key={i}
-                        className="p-2.5 rounded-xl bg-muted/40 border border-border/50 text-xs space-y-1"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-extrabold text-sm text-foreground">
-                            {it.quantity || 1}x {it.name}
-                          </span>
-                        </div>
-                        {it.notes && (
-                          <p className="text-red-600 dark:text-red-400 font-bold bg-red-50 dark:bg-red-950/40 px-2 py-0.5 rounded text-[11px]">
-                            ⚠️ Obs: {it.notes}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </CardContent>
-                </div>
-
-                {/* Footer Action Buttons */}
-                <div className="p-4 pt-0 border-t mt-2 pt-3">
-                  {isPending && (
-                    <Button
-                      onClick={() => handleStatusChange(order, 'preparing')}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-11 rounded-xl gap-2 min-h-[44px]"
-                    >
-                      <Flame className="h-4 w-4" /> Iniciar Preparo
-                    </Button>
-                  )}
-
-                  {isPreparing && (
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => handleStatusChange(order, 'pending')}
-                        className="h-11 rounded-xl text-xs font-bold"
-                      >
-                        <RotateCcw className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        onClick={() => handleStatusChange(order, 'ready')}
-                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11 rounded-xl gap-2 min-h-[44px]"
-                      >
-                        <CheckCircle2 className="h-4 w-4" /> Pronto para Servir
-                      </Button>
-                    </div>
-                  )}
-
-                  {isReady && (
-                    <Button
-                      onClick={() => handleStatusChange(order, 'delivered')}
-                      className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold h-11 rounded-xl gap-2 min-h-[44px]"
-                    >
-                      <Check className="h-4 w-4" /> Entregue à Mesa
-                    </Button>
-                  )}
-                </div>
-              </Card>
-            )
-          })}
+          {filteredOrders.map((order) => (
+            <KitchenKanbanCard key={order.id} order={order} onStatusChange={handleStatusChange} />
+          ))}
         </div>
       )}
     </div>
