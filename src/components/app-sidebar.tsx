@@ -42,8 +42,8 @@ const restaurantNav = [
   { title: 'Dashboard Geral', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Cardápio & Itens', url: '/cardapio-gestao', icon: UtensilsCrossed },
   { title: 'Comanda Garçom', url: '/garcom', icon: UserCheck, badge: 'Touch' },
-  { title: 'KDS Cozinha', url: '/cozinha', icon: ChefHat, badge: 'Display' },
-  { title: 'Bar & Doses', url: '/bar', icon: Wine, badge: 'Doses' },
+  { title: 'KDS Cozinha', url: '/cozinha', icon: ChefHat, badge: 'FIFO' },
+  { title: 'Bar & Doses', url: '/bar', icon: Wine, badge: 'FIFO' },
   { title: 'Estoque & Insumos', url: '/estoque', icon: Package },
   { title: 'Fichas Técnicas', url: '/receitas', icon: BookOpen },
   { title: 'Registro de Vendas', url: '/vendas', icon: TrendingUp },
@@ -85,7 +85,7 @@ export function AppSidebar() {
     navItems = supplierNav
   } else if (role === 'kitchen') {
     navItems = [
-      { title: 'KDS Cozinha', url: '/cozinha', icon: ChefHat, badge: 'Display' },
+      { title: 'KDS Cozinha', url: '/cozinha', icon: ChefHat, badge: 'FIFO' },
       { title: 'Estoque de Insumos', url: '/estoque', icon: Package },
       { title: 'Fichas Técnicas', url: '/receitas', icon: BookOpen },
     ]

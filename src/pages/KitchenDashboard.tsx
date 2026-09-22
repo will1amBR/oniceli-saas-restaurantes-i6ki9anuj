@@ -11,6 +11,7 @@ import {
   Maximize2,
   Minimize2,
   RefreshCw,
+  ClipboardCheck,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -30,6 +31,7 @@ import { ErrorState } from '@/components/error-state'
 import { KitchenMetricsBar } from '@/components/kitchen-metrics-bar'
 import { KitchenKanbanColumn, KitchenKanbanCard } from '@/components/kitchen-kanban'
 import { useKitchenMetrics } from '@/hooks/use-kitchen-metrics'
+import { DailyConsumptionClosing } from '@/components/daily-consumption-closing'
 
 export default function KitchenDashboard() {
   const { toast } = useToast()
@@ -41,6 +43,7 @@ export default function KitchenDashboard() {
   const [draggedOrderId, setDraggedOrderId] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'kanban' | 'grid'>('kanban')
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [closingModalOpen, setClosingModalOpen] = useState(false)
 
   // Toggle fullscreen for dedicated kitchen tablet mounts
   const toggleFullscreen = () => {
@@ -150,11 +153,18 @@ export default function KitchenDashboard() {
     return matchTable || matchCustomer || matchItem
   })
 
-  // Kanban Column Buckets (Fixed Order: Pendentes (Triagem) -> Em Cozimento -> Prontos -> Entregues)
-  const pendingOrders = filteredOrders.filter((o) => o.status === 'pending')
-  const preparingOrders = filteredOrders.filter((o) => o.status === 'preparing')
-  const readyOrders = filteredOrders.filter((o) => o.status === 'ready')
-  const deliveredOrders = filteredOrders.filter((o) => o.status === 'delivered')
+  // FIFO strict ordering: compare created timestamp ascending (oldest order first)
+  const fifoSort = (a: KitchenOrder, b: KitchenOrder) => {
+    const timeA = a.created ? new Date(a.created).getTime() : 0
+    const timeB = b.created ? new Date(b.created).getTime() : 0
+    return timeA - timeB
+  }
+
+  // Kanban Column Buckets (FIFO: mais antigo primeiro em todas as colunas)
+  const pendingOrders = filteredOrders.filter((o) => o.status === 'pending').sort(fifoSort)
+  const preparingOrders = filteredOrders.filter((o) => o.status === 'preparing').sort(fifoSort)
+  const readyOrders = filteredOrders.filter((o) => o.status === 'ready').sort(fifoSort)
+  const deliveredOrders = filteredOrders.filter((o) => o.status === 'delivered').sort(fifoSort)
 
   return (
     <div className={`space-y-5 pb-20 ${isFullscreen ? 'p-3 bg-background min-h-screen' : ''}`}>
@@ -216,6 +226,17 @@ export default function KitchenDashboard() {
             </button>
           </div>
 
+          {/* Botão Fechamento de Consumo do Dia */}
+          <Button
+            variant="outline"
+            onClick={() => setClosingModalOpen(true)}
+            className="h-11 px-3.5 rounded-xl shrink-0 font-extrabold text-xs gap-1.5 border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 shadow-2xs"
+            title="Registrar consumo e desvio de insumos do turno da cozinha"
+          >
+            <ClipboardCheck className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <span>Fechamento do Dia</span>
+          </Button>
+
           {/* Botão de Tela Cheia para o Tablet da Cozinha */}
           <Button
             variant="outline"
@@ -251,6 +272,32 @@ export default function KitchenDashboard() {
 
       {/* Real-time Kitchen Metrics Bar & Traffic Light */}
       <KitchenMetricsBar metrics={metrics} />
+
+      {/* Banner Atalho de Fechamento de Consumo para Cozinheiros */}
+      <div className="rounded-2xl border p-3 sm:p-4 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border-amber-500/30 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-300">
+            <ClipboardCheck className="h-5 w-5" />
+          </div>
+          <div>
+            <h4 className="font-extrabold text-sm text-foreground flex items-center gap-1.5">
+              Fim de Turno / Fechamento de Insumos da Cozinha
+              <Badge className="bg-amber-600 text-white text-[9px] font-bold">Obrigatório</Badge>
+            </h4>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Valide os insumos teóricos baixados pelas receitas e informe desvios reais (queimas,
+              erros ou perdas).
+            </p>
+          </div>
+        </div>
+        <Button
+          onClick={() => setClosingModalOpen(true)}
+          className="h-11 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black text-xs gap-1.5 shadow-sm active:scale-95 transition-transform"
+        >
+          <ClipboardCheck className="h-4 w-4" />
+          <span>Abrir Fechamento do Dia</span>
+        </Button>
+      </div>
 
       {/* Main Content: Kanban or Grid */}
       {loading ? (
@@ -343,6 +390,15 @@ export default function KitchenDashboard() {
           ))}
         </div>
       )}
+
+      {/* Modal / Tela de Fechamento de Consumo Diário */}
+      <DailyConsumptionClosing
+        open={closingModalOpen}
+        onOpenChange={setClosingModalOpen}
+        onSuccess={() => {
+          loadOrders()
+        }}
+      />
     </div>
   )
 }

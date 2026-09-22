@@ -45,7 +45,7 @@ export const getKitchenOrders = (restaurantId?: string) => {
   const filter = restaurantId ? `restaurant_id = "${restaurantId}"` : ''
   return pb.collection('kitchen_orders').getFullList<KitchenOrder>({
     filter: filter || undefined,
-    sort: '-created',
+    sort: 'created',
     expand: 'waiter_id,restaurant_id',
   })
 }

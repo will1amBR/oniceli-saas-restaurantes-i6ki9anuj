@@ -497,11 +497,18 @@ export default function BarDashboard() {
     return matchTable || matchCustomer || matchItem
   })
 
-  // Buckets
-  const pendingOrders = filteredOrders.filter((o) => o.status === 'pending')
-  const preparingOrders = filteredOrders.filter((o) => o.status === 'preparing')
-  const readyOrders = filteredOrders.filter((o) => o.status === 'ready')
-  const deliveredOrders = filteredOrders.filter((o) => o.status === 'delivered')
+  // FIFO strict ordering: compare created timestamp ascending (oldest order first)
+  const fifoSort = (a: BarOrder, b: BarOrder) => {
+    const timeA = a.created ? new Date(a.created).getTime() : 0
+    const timeB = b.created ? new Date(b.created).getTime() : 0
+    return timeA - timeB
+  }
+
+  // Buckets (FIFO: mais antigo primeiro em todas as colunas)
+  const pendingOrders = filteredOrders.filter((o) => o.status === 'pending').sort(fifoSort)
+  const preparingOrders = filteredOrders.filter((o) => o.status === 'preparing').sort(fifoSort)
+  const readyOrders = filteredOrders.filter((o) => o.status === 'ready').sort(fifoSort)
+  const deliveredOrders = filteredOrders.filter((o) => o.status === 'delivered').sort(fifoSort)
 
   const totalActive = pendingOrders.length + preparingOrders.length
 
