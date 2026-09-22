@@ -5,15 +5,12 @@ import {
   Minus,
   Trash2,
   Send,
-  Sparkles,
   ShoppingBag,
   Wine,
   ChefHat,
   Search,
   CheckCircle2,
-  AlertCircle,
-  Table as TableIcon,
-  Clock,
+  BellRing,
   RotateCcw,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -224,39 +221,122 @@ export default function WaiterDashboard() {
   const cartTotal = cart.reduce((acc, curr) => acc + (curr.item.price || 0) * curr.quantity, 0)
   const cartCount = cart.reduce((acc, curr) => acc + curr.quantity, 0)
 
-  // Tables quick buttons
-  const quickTables = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', 'Balcão']
+  // Mesas com itens PRONTOS para retirada (chamada imediata para o garçom)
+  const readyKitchenOrders = activeKitchenOrders.filter((o) => o.status === 'ready')
+  const readyBarOrders = activeBarOrders.filter((o) => o.status === 'ready')
+  const readyOrdersCount = readyKitchenOrders.length + readyBarOrders.length
+
+  // Mesas com pedidos ativos no momento
+  const activeTablesSet = new Set<string>()
+  activeKitchenOrders.forEach((o) => {
+    if (o.table_number) activeTablesSet.add(o.table_number.trim())
+  })
+  activeBarOrders.forEach((o) => {
+    if (o.table_number) activeTablesSet.add(o.table_number.trim())
+  })
+
+  // Quick Tables selector list
+  const defaultQuickTables = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', 'Balcão']
+  const allQuickTables = Array.from(
+    new Set([...defaultQuickTables, ...Array.from(activeTablesSet)]),
+  )
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-6 pb-28">
+      {/* Alerta de Pratos/Bebidas PRONTOS para retirada imediata */}
+      {readyOrdersCount > 0 && (
+        <div className="bg-emerald-600 text-white p-3.5 sm:p-4 rounded-2xl shadow-lg border border-emerald-400 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-pulse">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+              <BellRing className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h3 className="font-black text-sm sm:text-base leading-tight">
+                {readyOrdersCount} Pedido(s) PRONTO(S) para Retirada no Pass!
+              </h3>
+              <p className="text-xs text-emerald-100 mt-0.5">
+                Prontos para servir:{' '}
+                {Array.from(
+                  new Set(
+                    [...readyKitchenOrders, ...readyBarOrders].map(
+                      (o) => `Mesa ${o.table_number || '01'}`,
+                    ),
+                  ),
+                ).join(' · ')}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {readyKitchenOrders.map((k) => (
+              <Button
+                key={k.id}
+                size="sm"
+                onClick={() => setTableNumber(k.table_number || '01')}
+                className="bg-white text-emerald-900 hover:bg-emerald-50 font-black text-xs h-9 rounded-xl shadow-xs"
+              >
+                Mesa {k.table_number || '01'} (Cozinha)
+              </Button>
+            ))}
+            {readyBarOrders.map((b) => (
+              <Button
+                key={b.id}
+                size="sm"
+                onClick={() => setTableNumber(b.table_number || '01')}
+                className="bg-white text-indigo-900 hover:bg-indigo-50 font-black text-xs h-9 rounded-xl shadow-xs"
+              >
+                Mesa {b.table_number || '01'} (Bar)
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card p-4 sm:p-5 rounded-2xl border border-border/60 shadow-sm">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-2">
             Comanda do Garçom
-            <Badge className="bg-purple-600 text-white text-[10px] font-bold">Touch</Badge>
+            <Badge className="bg-purple-600 text-white text-[10px] font-bold">Touch Rápido</Badge>
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Lançamento rápido e acompanhamento das mesas do salão em tempo real.
+            Lançamento em 1 toque: selecione a mesa e clique no prato para adicionar.
           </p>
         </div>
 
-        {/* Quick Table Selector Chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1">
+        {/* Quick Table Selector Chips com indicação visual de mesas ativas */}
+        <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 no-scrollbar">
           <span className="text-xs font-bold text-muted-foreground mr-1 shrink-0">Mesa:</span>
-          {quickTables.map((t) => (
-            <button
-              key={t}
-              onClick={() => setTableNumber(t)}
-              className={`min-w-[44px] h-11 px-3 rounded-xl text-xs font-bold transition-all shrink-0 ${
-                tableNumber === t
-                  ? 'bg-purple-600 text-white shadow-md scale-105'
-                  : 'bg-muted hover:bg-muted/80 text-foreground border'
-              }`}
-            >
-              {t}
-            </button>
-          ))}
+          {allQuickTables.map((t) => {
+            const isSelected = tableNumber === t
+            const hasActiveOrder = activeTablesSet.has(t)
+            const hasReady = [...readyKitchenOrders, ...readyBarOrders].some(
+              (o) => (o.table_number || '').trim() === t,
+            )
+
+            return (
+              <button
+                key={t}
+                onClick={() => setTableNumber(t)}
+                className={`relative min-w-[48px] h-12 px-3 rounded-xl text-xs font-black transition-all shrink-0 ${
+                  isSelected
+                    ? 'bg-purple-600 text-white shadow-md scale-105 ring-2 ring-purple-400'
+                    : hasReady
+                      ? 'bg-emerald-500/20 text-emerald-900 dark:text-emerald-200 border-2 border-emerald-500 animate-pulse'
+                      : hasActiveOrder
+                        ? 'bg-amber-500/15 text-amber-900 dark:text-amber-200 border border-amber-500/50'
+                        : 'bg-muted hover:bg-muted/80 text-foreground border'
+                }`}
+              >
+                {t}
+                {hasReady && (
+                  <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-background" />
+                )}
+                {!hasReady && hasActiveOrder && (
+                  <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-amber-500" />
+                )}
+              </button>
+            )
+          })}
         </div>
       </div>
 
@@ -281,13 +361,16 @@ export default function WaiterDashboard() {
               const mins = k.created
                 ? Math.max(0, Math.floor((Date.now() - new Date(k.created).getTime()) / 60000))
                 : 0
-              const isUrgent = mins >= 20 && k.status !== 'ready'
+              const isReady = k.status === 'ready'
+              const isUrgent = mins >= 20 && !isReady
+
               return (
-                <div
+                <button
                   key={k.id}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs shrink-0 ${
-                    k.status === 'ready'
-                      ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-800 dark:text-emerald-300 font-bold animate-pulse'
+                  onClick={() => setTableNumber(k.table_number || '01')}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs shrink-0 cursor-pointer transition-all hover:scale-102 ${
+                    isReady
+                      ? 'bg-emerald-500/20 border-emerald-500 text-emerald-900 dark:text-emerald-200 font-black animate-pulse shadow-xs'
                       : isUrgent
                         ? 'bg-rose-500/10 border-rose-500/40 text-rose-800 dark:text-rose-300'
                         : 'bg-muted/40 border-border text-foreground'
@@ -300,7 +383,7 @@ export default function WaiterDashboard() {
                     className="text-[10px] py-0 px-1.5"
                   />
                   <span className="font-mono text-[11px] text-muted-foreground">{mins} min</span>
-                </div>
+                </button>
               )
             })}
           </div>
@@ -376,18 +459,18 @@ export default function WaiterDashboard() {
                       <div
                         key={item.id}
                         onClick={() => addToCart(item)}
-                        className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between select-none active:scale-[0.98] ${
+                        className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between select-none active:scale-[0.97] min-h-[110px] ${
                           inCart
-                            ? 'border-purple-500 bg-purple-50/50 dark:bg-purple-950/20 shadow-sm'
-                            : 'border-border/80 hover:border-purple-400 bg-card'
+                            ? 'border-purple-500 bg-purple-50/60 dark:bg-purple-950/30 shadow-md ring-2 ring-purple-400/30'
+                            : 'border-border/80 hover:border-purple-400 bg-card hover:shadow-xs'
                         }`}
                       >
                         <div className="flex justify-between items-start gap-2">
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                               <Badge
                                 variant="outline"
-                                className={`text-[9px] px-1.5 py-0 ${
+                                className={`text-[9px] px-1.5 py-0 font-bold ${
                                   isDrink
                                     ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
                                     : 'bg-amber-50 text-amber-700 border-amber-200'
@@ -395,28 +478,37 @@ export default function WaiterDashboard() {
                               >
                                 {isDrink ? 'BAR' : 'COZINHA'}
                               </Badge>
-                              <span className="font-bold text-sm truncate">{item.name}</span>
+                              <span className="font-black text-sm sm:text-base leading-tight truncate">
+                                {item.name}
+                              </span>
                             </div>
-                            <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">
+                            <p className="text-[11px] text-muted-foreground line-clamp-1 mt-1 font-medium">
                               {item.category || 'Geral'}
                             </p>
                           </div>
+
+                          {inCart && (
+                            <span className="h-7 w-7 rounded-full bg-purple-600 text-white font-mono font-black text-xs flex items-center justify-center shrink-0 shadow-xs">
+                              {inCart.quantity}x
+                            </span>
+                          )}
                         </div>
 
                         <div className="flex items-center justify-between mt-3 pt-2 border-t border-border/50">
-                          <span className="font-mono font-black text-sm text-purple-700 dark:text-purple-300">
+                          <span className="font-mono font-black text-sm sm:text-base text-purple-700 dark:text-purple-300">
                             R$ {(item.price || 0).toFixed(2).replace('.', ',')}
                           </span>
 
                           <Button
                             size="sm"
-                            className="h-8 px-2.5 rounded-lg text-xs font-bold gap-1 bg-purple-600 hover:bg-purple-700 text-white min-h-[36px]"
+                            className="h-9 px-3 rounded-xl text-xs font-black gap-1.5 bg-purple-600 hover:bg-purple-700 text-white min-h-[38px] shadow-xs active:scale-95"
                             onClick={(e) => {
                               e.stopPropagation()
                               addToCart(item)
                             }}
                           >
-                            <Plus className="h-3.5 w-3.5" /> Adicionar
+                            <Plus className="h-4 w-4" />
+                            {inCart ? '+1 Outro' : 'Adicionar'}
                           </Button>
                         </div>
                       </div>
@@ -543,6 +635,31 @@ export default function WaiterDashboard() {
           </Card>
         </div>
       </div>
+
+      {/* Botão de Envio FIXO na parte inferior da tela (Mobile e Tablet) quando há itens na comanda */}
+      {cart.length > 0 && (
+        <div className="fixed bottom-4 inset-x-0 z-40 max-w-lg mx-auto px-4 animate-fade-in-up">
+          <Button
+            onClick={handleSendOrder}
+            disabled={submitting}
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-black h-14 rounded-2xl shadow-2xl flex items-center justify-between px-5 text-base border-2 border-purple-400 active:scale-[0.99] transition-transform"
+          >
+            <div className="flex items-center gap-2.5">
+              <span className="h-8 w-8 rounded-xl bg-white/20 flex items-center justify-center font-black text-sm">
+                {cartCount}
+              </span>
+              <span>Enviar Mesa {tableNumber}</span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="font-mono font-black text-base">
+                R$ {cartTotal.toFixed(2).replace('.', ',')}
+              </span>
+              <Send className="h-4 w-4 ml-1" />
+            </div>
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

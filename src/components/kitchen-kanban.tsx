@@ -35,21 +35,54 @@ export function KitchenKanbanCard({
   onDragEnd,
   isDragging = false,
 }: KitchenKanbanCardProps) {
-  let itemsList: KitchenOrderItem[] = []
+  const [isUpdating, setIsUpdating] = useState(false)
+
+  let rawItemsList: KitchenOrderItem[] = []
   if (Array.isArray(order.items)) {
-    itemsList = order.items
+    rawItemsList = order.items
   } else if (typeof order.items === 'string') {
     try {
-      itemsList = JSON.parse(order.items || '[]')
+      rawItemsList = JSON.parse(order.items || '[]')
     } catch {
-      itemsList = []
+      rawItemsList = []
     }
   }
+
+  // Agrupamento visual de itens idênticos (mesmo item + mesma observação) para facilitar visualização rápida
+  const groupedItems = React.useMemo(() => {
+    const map = new Map<string, { name: string; quantity: number; notes?: string }>()
+    for (const it of rawItemsList) {
+      const key = `${(it.name || '').trim().toLowerCase()}__${(it.notes || '').trim().toLowerCase()}`
+      const existing = map.get(key)
+      if (existing) {
+        existing.quantity += Number(it.quantity || 1)
+      } else {
+        map.set(key, {
+          name: it.name || 'Item sem nome',
+          quantity: Number(it.quantity || 1),
+          notes: it.notes ? String(it.notes).trim() : undefined,
+        })
+      }
+    }
+    return Array.from(map.values())
+  }, [rawItemsList])
+
+  const totalQuantity = groupedItems.reduce((acc, it) => acc + it.quantity, 0)
 
   const isPending = order.status === 'pending'
   const isPreparing = order.status === 'preparing'
   const isReady = order.status === 'ready'
   const isDelivered = order.status === 'delivered'
+
+  const handleAction = async (newStatus: KitchenOrderStatus) => {
+    if (isUpdating) return
+    setIsUpdating(true)
+    try {
+      await onStatusChange(order, newStatus)
+    } finally {
+      setIsUpdating(false)
+    }
+  }
 
   const getElapsedTime = (createdStr: string) => {
     if (!createdStr) return '0 min'
@@ -68,107 +101,153 @@ export function KitchenKanbanCard({
   const isDelayed = (isPending || isPreparing) && elapsedMins >= 20
   const isWarning = (isPending || isPreparing) && elapsedMins >= 12 && !isDelayed
 
+  // Detecta se tem alguma observação crítica/alergia
+  const hasCriticalNotes = groupedItems.some((it) => {
+    if (!it.notes) return false
+    const n = it.notes.toLowerCase()
+    return (
+      n.includes('alerg') ||
+      n.includes('sem glúten') ||
+      n.includes('sem gluten') ||
+      n.includes('lactose') ||
+      n.includes('urgente') ||
+      n.includes('atenção')
+    )
+  })
+
   return (
     <div
       draggable
       onDragStart={(e) => onDragStart?.(e, order.id)}
       onDragEnd={onDragEnd}
-      className={`group relative rounded-2xl border-2 transition-all select-none shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing bg-card flex flex-col justify-between ${
+      className={`group relative rounded-2xl border-2 transition-all duration-150 select-none shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing bg-card flex flex-col justify-between ${
         isDragging ? 'opacity-40 scale-95 ring-4 ring-amber-500' : 'opacity-100'
-      } ${
+      } ${isUpdating ? 'animate-pulse pointer-events-none opacity-80' : ''} ${
         isPending
-          ? 'border-amber-400/90 bg-amber-500/[0.04] dark:bg-amber-950/20 ring-1 ring-amber-400/30'
+          ? 'border-amber-400 bg-amber-500/[0.04] dark:bg-amber-950/25 ring-1 ring-amber-400/30'
           : isPreparing
-            ? 'border-blue-500/90 bg-blue-500/[0.05] dark:bg-blue-950/25 ring-1 ring-blue-500/30'
+            ? 'border-blue-500 bg-blue-500/[0.05] dark:bg-blue-950/30 ring-1 ring-blue-500/30'
             : isReady
-              ? 'border-emerald-500/90 bg-emerald-500/[0.06] dark:bg-emerald-950/30 ring-1 ring-emerald-500/30'
+              ? 'border-emerald-500 bg-emerald-500/[0.07] dark:bg-emerald-950/35 ring-1 ring-emerald-500/30'
               : 'border-border/80 bg-muted/30 opacity-80'
       }`}
     >
       <div>
-        {/* Card Header with Table & Time & Drag Handle (Optimized for Distance Readability) */}
-        <div className="p-3.5 sm:p-4 pb-3 border-b bg-muted/30 rounded-t-2xl flex items-start justify-between gap-2">
+        {/* Card Header Dominante: Número da Mesa como Elemento Mais Proeminente do Card */}
+        <div
+          className={`p-3.5 sm:p-4 pb-3 border-b rounded-t-2xl flex items-center justify-between gap-2 transition-colors ${
+            isPending
+              ? 'bg-amber-500/10 dark:bg-amber-950/40'
+              : isPreparing
+                ? 'bg-blue-500/10 dark:bg-blue-950/40'
+                : isReady
+                  ? 'bg-emerald-500/15 dark:bg-emerald-950/50'
+                  : 'bg-muted/40'
+          }`}
+        >
           <div className="flex items-center gap-2.5 min-w-0">
             <span
-              title="Toque ou arraste para mover"
-              className="text-muted-foreground/50 hover:text-muted-foreground p-1 cursor-grab active:cursor-grabbing -ml-1 touch-none"
+              title="Toque ou arraste para mover de coluna"
+              className="text-muted-foreground/60 hover:text-foreground p-1 cursor-grab active:cursor-grabbing -ml-1 touch-none rounded-lg hover:bg-background/60"
             >
               <GripVertical className="h-5 w-5" />
             </span>
+
             <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-black text-lg sm:text-xl md:text-2xl text-foreground tracking-tight">
-                  Mesa {order.table_number || '01'}
+              {/* Mesa Gigante e Marcante para visualização a 2 metros de distância */}
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <span className="font-black text-2xl sm:text-3xl tracking-tight text-foreground drop-shadow-2xs">
+                  MESA {order.table_number || '01'}
                 </span>
-                <StatusBadge
-                  status={order.status}
-                  showIcon={false}
-                  className="text-[11px] font-bold px-2 py-0.5"
-                />
+                <Badge
+                  variant="outline"
+                  className="font-mono text-[10px] font-bold px-1.5 py-0 bg-background/80"
+                >
+                  {totalQuantity} {totalQuantity === 1 ? 'item' : 'itens'}
+                </Badge>
               </div>
-              {order.customer_name && (
-                <p className="text-xs sm:text-sm font-semibold text-muted-foreground flex items-center gap-1.5 mt-0.5 truncate max-w-[200px]">
-                  <User className="h-3.5 w-3.5 shrink-0" />
+
+              {order.customer_name ? (
+                <p className="text-xs sm:text-sm font-semibold text-muted-foreground flex items-center gap-1 mt-0.5 truncate max-w-[200px]">
+                  <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground/80" />
                   <span className="truncate">{order.customer_name}</span>
                 </p>
-              )}
+              ) : null}
             </div>
           </div>
 
-          {/* Time Badge with Warning Color (Large font for tablet distance viewing) */}
+          {/* Time Badge com Alerta de SLA em destaque */}
           <div
-            className={`flex items-center gap-1.5 text-xs sm:text-sm font-mono font-black px-2.5 py-1 rounded-xl border shadow-xs shrink-0 ${
+            className={`flex items-center gap-1.5 text-xs sm:text-sm font-mono font-black px-2.5 py-1.5 rounded-xl border shadow-xs shrink-0 ${
               isDelayed
                 ? 'bg-rose-500 text-white border-rose-600 shadow-rose-500/30 animate-pulse'
                 : isWarning
                   ? 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-200'
                   : 'bg-background border-border text-foreground'
             }`}
+            title={`Tempo decorrido desde o envio: ${getElapsedTime(order.created)}`}
           >
-            <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+            <Clock className="h-4 w-4 shrink-0" />
             <span>{getElapsedTime(order.created)}</span>
           </div>
         </div>
 
-        {/* Order Items (Clear, large quantities and pratos for tablet screen) */}
+        {/* Alerta de Alergia / Observação Crítica no topo do corpo se houver */}
+        {hasCriticalNotes && (
+          <div className="mx-3 sm:mx-4 mt-3 p-2.5 rounded-xl bg-rose-600 text-white font-black text-xs flex items-center gap-2 shadow-sm animate-pulse">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span className="uppercase tracking-wider">Atenção Cozinha: Alergia / Obs Crítica</span>
+          </div>
+        )}
+
+        {/* Order Items — Agrupados, claros e com quantidades dominantes */}
         <div className="p-3.5 sm:p-4 space-y-2.5">
-          {itemsList.map((it: any, idx: number) => (
+          {groupedItems.map((it, idx) => (
             <div
               key={idx}
-              className="p-2.5 sm:p-3 rounded-xl bg-muted/40 border border-border/60 text-xs sm:text-sm space-y-1.5"
+              className={`p-3 rounded-xl border text-xs sm:text-sm space-y-1.5 transition-all ${
+                it.notes
+                  ? 'bg-amber-500/[0.08] dark:bg-amber-950/30 border-amber-500/40'
+                  : 'bg-muted/40 border-border/70'
+              }`}
             >
               <div className="flex items-baseline justify-between font-bold text-foreground">
-                <span className="text-sm sm:text-base leading-snug">
-                  <span className="inline-block min-w-[28px] font-mono text-purple-700 dark:text-purple-400 mr-1.5 font-black text-base sm:text-lg">
-                    {it.quantity || 1}x
+                <span className="text-sm sm:text-base leading-snug flex items-baseline">
+                  {/* Quantidade grande para leitura rápida */}
+                  <span className="inline-flex items-center justify-center min-w-[32px] h-7 px-1.5 mr-2 rounded-lg bg-foreground text-background font-mono font-black text-sm sm:text-base shadow-2xs">
+                    {it.quantity}x
                   </span>
-                  {it.name}
+                  <span className="font-extrabold text-foreground tracking-tight">{it.name}</span>
                 </span>
               </div>
+
+              {/* Observação / Alergia destacada com badge amarelo/vermelho */}
               {it.notes && (
-                <div className="text-xs sm:text-sm font-black text-rose-700 dark:text-rose-300 bg-rose-500/15 border border-rose-500/30 px-2.5 py-1.5 rounded-lg flex items-start gap-1.5">
+                <div className="mt-1 text-xs sm:text-sm font-black text-amber-950 dark:text-amber-100 bg-amber-400/25 dark:bg-amber-400/20 border border-amber-500/50 px-2.5 py-1.5 rounded-lg flex items-start gap-1.5">
                   <span className="shrink-0 text-base leading-none">⚠️</span>
-                  <span>Obs: {it.notes}</span>
+                  <span>{it.notes}</span>
                 </div>
               )}
             </div>
           ))}
 
           {order.notes && (
-            <div className="text-xs sm:text-sm font-semibold text-amber-800 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 px-3 py-2 rounded-xl">
-              📝 Geral: {order.notes}
+            <div className="text-xs sm:text-sm font-semibold text-amber-900 dark:text-amber-200 bg-amber-500/20 border border-amber-500/40 px-3 py-2 rounded-xl flex items-start gap-1.5">
+              <span className="shrink-0 text-base leading-none">📝</span>
+              <span>Geral: {order.notes}</span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Touch-First Large Action Buttons (56px-60px height for kitchen tablet taps) */}
+      {/* Botões Touch de 56px-64px de Ação Rápida com Feedback Háptico/Visual */}
       <div className="p-3.5 sm:p-4 pt-2 border-t mt-1 bg-muted/20 rounded-b-2xl">
         {isPending && (
           <div className="flex gap-2">
             <Button
-              onClick={() => onStatusChange(order, 'preparing')}
-              className="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-black h-14 sm:h-16 rounded-xl text-sm sm:text-base gap-2 shadow-md min-h-[56px] transition-all"
+              onClick={() => handleAction('preparing')}
+              disabled={isUpdating}
+              className="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-black h-14 sm:h-16 rounded-xl text-sm sm:text-base gap-2 shadow-md min-h-[56px] transition-transform"
             >
               <Flame className="h-5 w-5 sm:h-6 sm:w-6" />
               <span>INICIAR COZIMENTO</span>
@@ -181,15 +260,17 @@ export function KitchenKanbanCard({
           <div className="flex gap-2.5">
             <Button
               variant="outline"
-              onClick={() => onStatusChange(order, 'pending')}
+              onClick={() => handleAction('pending')}
+              disabled={isUpdating}
               title="Voltar para Triagem"
-              className="h-14 sm:h-16 w-14 sm:w-16 rounded-xl font-black shrink-0 min-h-[56px] min-w-[56px] border-2 hover:bg-muted active:scale-95"
+              className="h-14 sm:h-16 w-14 sm:w-16 rounded-xl font-black shrink-0 min-h-[56px] min-w-[56px] border-2 hover:bg-muted active:scale-95 transition-transform"
             >
               <ChevronLeft className="h-6 w-6 text-muted-foreground" />
             </Button>
             <Button
-              onClick={() => onStatusChange(order, 'ready')}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-black h-14 sm:h-16 rounded-xl text-sm sm:text-base gap-2 shadow-md min-h-[56px] transition-all"
+              onClick={() => handleAction('ready')}
+              disabled={isUpdating}
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-black h-14 sm:h-16 rounded-xl text-sm sm:text-base gap-2 shadow-md min-h-[56px] transition-transform"
             >
               <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6" />
               <span>PRONTO / SERVIR</span>
@@ -202,15 +283,17 @@ export function KitchenKanbanCard({
           <div className="flex gap-2.5">
             <Button
               variant="outline"
-              onClick={() => onStatusChange(order, 'preparing')}
+              onClick={() => handleAction('preparing')}
+              disabled={isUpdating}
               title="Voltar para Em Cozimento"
-              className="h-14 sm:h-16 w-14 sm:w-16 rounded-xl font-black shrink-0 min-h-[56px] min-w-[56px] border-2 hover:bg-muted active:scale-95"
+              className="h-14 sm:h-16 w-14 sm:w-16 rounded-xl font-black shrink-0 min-h-[56px] min-w-[56px] border-2 hover:bg-muted active:scale-95 transition-transform"
             >
               <ChevronLeft className="h-6 w-6 text-muted-foreground" />
             </Button>
             <Button
-              onClick={() => onStatusChange(order, 'delivered')}
-              className="flex-1 bg-slate-800 hover:bg-slate-900 active:scale-[0.99] text-white font-black h-14 sm:h-16 rounded-xl text-sm sm:text-base gap-2 shadow-md min-h-[56px] transition-all"
+              onClick={() => handleAction('delivered')}
+              disabled={isUpdating}
+              className="flex-1 bg-slate-800 hover:bg-slate-900 active:scale-[0.98] text-white font-black h-14 sm:h-16 rounded-xl text-sm sm:text-base gap-2 shadow-md min-h-[56px] transition-transform"
             >
               <Check className="h-5 w-5 sm:h-6 sm:w-6" />
               <span>ENTREGUE À MESA</span>
@@ -227,8 +310,9 @@ export function KitchenKanbanCard({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onStatusChange(order, 'ready')}
-              className="h-11 px-4 text-xs sm:text-sm font-bold rounded-xl min-h-[44px]"
+              onClick={() => handleAction('ready')}
+              disabled={isUpdating}
+              className="h-11 px-4 text-xs sm:text-sm font-bold rounded-xl min-h-[44px] active:scale-95 transition-transform"
             >
               <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Reabrir
             </Button>

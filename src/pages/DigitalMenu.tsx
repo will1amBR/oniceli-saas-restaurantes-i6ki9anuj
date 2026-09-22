@@ -427,52 +427,97 @@ export default function DigitalMenu() {
     if (!status) return null
     const isPending = status === 'pending'
     const isPreparing = status === 'preparing'
-    const isReady = status === 'ready' || status === 'delivered'
+    const isReady = status === 'ready'
+    const isDelivered = status === 'delivered'
     const IconComp = icon
 
     return (
-      <div className="p-3 rounded-xl border bg-muted/30 space-y-2">
+      <div
+        className={`p-4 rounded-2xl border space-y-3 transition-all ${
+          isReady
+            ? 'bg-emerald-500/15 border-emerald-500 ring-2 ring-emerald-500/20'
+            : isPreparing
+              ? 'bg-blue-500/10 border-blue-500/40'
+              : 'bg-muted/40 border-border'
+        }`}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <IconComp className="h-4 w-4 text-emerald-600" />
-            <span className="font-bold text-sm">{label}</span>
-          </div>
-          {isPending && (
-            <Badge
-              variant="outline"
-              className="bg-amber-50 text-amber-700 border-amber-300 gap-1 text-xs"
+            <div
+              className={`p-1.5 rounded-lg ${isReady ? 'bg-emerald-600 text-white' : isPreparing ? 'bg-blue-600 text-white' : 'bg-muted text-foreground'}`}
             >
-              <Clock className="h-3 w-3" /> Pendente
-            </Badge>
-          )}
-          {isPreparing && (
-            <Badge className="bg-blue-600 hover:bg-blue-600 text-white gap-1 text-xs animate-pulse font-bold">
-              <Flame className="h-3 w-3" /> Em Preparo
-            </Badge>
-          )}
-          {isReady && (
-            <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white gap-1 text-xs font-bold animate-bounce">
-              <CheckCircle2 className="h-3 w-3" /> Pronto!
-            </Badge>
-          )}
+              <IconComp className="h-4 w-4" />
+            </div>
+            <div>
+              <span className="font-extrabold text-sm sm:text-base text-foreground">{label}</span>
+              <p className="text-[11px] text-muted-foreground">
+                {isPending && 'Pedido recebido na esteira de triagem'}
+                {isPreparing && 'Cozinheiro ou bartender preparando agora'}
+                {isReady && '🔔 Pronto! O garçom está levando à sua mesa'}
+                {isDelivered && 'Entregue na sua mesa. Bom apetite!'}
+              </p>
+            </div>
+          </div>
+
+          <div>
+            {isPending && (
+              <Badge
+                variant="outline"
+                className="bg-amber-50 text-amber-800 border-amber-300 gap-1 text-xs font-bold"
+              >
+                <Clock className="h-3.5 w-3.5" /> 1. Recebido
+              </Badge>
+            )}
+            {isPreparing && (
+              <Badge className="bg-blue-600 hover:bg-blue-600 text-white gap-1 text-xs animate-pulse font-black shadow-xs">
+                <Flame className="h-3.5 w-3.5" /> 2. No Fogo
+              </Badge>
+            )}
+            {isReady && (
+              <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white gap-1 text-xs font-black animate-bounce shadow-md">
+                <CheckCircle2 className="h-3.5 w-3.5" /> 3. Pronto!
+              </Badge>
+            )}
+            {isDelivered && (
+              <Badge className="bg-slate-700 text-white gap-1 text-xs font-bold">
+                <Check className="h-3.5 w-3.5" /> Entregue
+              </Badge>
+            )}
+          </div>
         </div>
 
-        {/* Visual Progress bar */}
-        <div className="grid grid-cols-3 gap-1.5 pt-1">
+        {/* Visual Progress Steps */}
+        <div className="grid grid-cols-3 gap-2 pt-1">
           <div
-            className={`h-2 rounded-full transition-all ${isPending || isPreparing || isReady ? 'bg-amber-500' : 'bg-muted'}`}
+            className={`h-2.5 rounded-full transition-all ${
+              isPending || isPreparing || isReady || isDelivered ? 'bg-amber-500' : 'bg-muted'
+            }`}
           />
           <div
-            className={`h-2 rounded-full transition-all ${isPreparing || isReady ? 'bg-blue-600 animate-pulse' : 'bg-muted'}`}
+            className={`h-2.5 rounded-full transition-all ${
+              isPreparing || isReady || isDelivered ? 'bg-blue-600' : 'bg-muted'
+            }`}
           />
           <div
-            className={`h-2 rounded-full transition-all ${isReady ? 'bg-emerald-600' : 'bg-muted'}`}
+            className={`h-2.5 rounded-full transition-all ${
+              isReady || isDelivered ? 'bg-emerald-600' : 'bg-muted'
+            }`}
           />
         </div>
-        <div className="flex justify-between text-[10px] font-medium text-muted-foreground">
-          <span>Na Fila</span>
-          <span>Em Preparo</span>
-          <span>Pronto</span>
+        <div className="flex justify-between text-[11px] font-bold text-muted-foreground px-0.5">
+          <span className={isPending ? 'text-amber-600 dark:text-amber-400 font-black' : ''}>
+            Recebido
+          </span>
+          <span className={isPreparing ? 'text-blue-600 dark:text-blue-400 font-black' : ''}>
+            Em preparo
+          </span>
+          <span
+            className={
+              isReady || isDelivered ? 'text-emerald-600 dark:text-emerald-400 font-black' : ''
+            }
+          >
+            Pronto p/ Servir
+          </span>
         </div>
       </div>
     )
@@ -687,90 +732,96 @@ export default function DigitalMenu() {
                       setModalItemNotes('')
                     }}
                   >
-                    {/* Item Image with Category Badge */}
-                    <div className="relative h-44 w-full overflow-hidden bg-muted">
+                    {/* Item Image with Category Badge & Appetizing overlay */}
+                    <div className="relative h-48 w-full overflow-hidden bg-muted">
                       <img
                         src={imageUrl}
                         alt={item.name}
                         loading="lazy"
-                        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="h-full w-full object-cover group-hover:scale-108 transition-transform duration-500 ease-out"
                       />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-80" />
+
                       <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
-                        <Badge className="bg-background/90 hover:bg-background/90 text-foreground font-semibold backdrop-blur text-xs border shadow-sm">
+                        <Badge className="bg-background/95 hover:bg-background text-foreground font-black backdrop-blur text-[11px] border shadow-sm">
                           {item.category || 'Geral'}
                         </Badge>
                         {isDrink ? (
-                          <Badge className="bg-indigo-600/90 hover:bg-indigo-600 text-white font-bold text-[10px] gap-1 shadow-sm">
+                          <Badge className="bg-indigo-600 text-white font-black text-[10px] gap-1 shadow-sm">
                             <Wine className="h-3 w-3" /> Bar
                           </Badge>
                         ) : (
-                          <Badge className="bg-emerald-600/90 hover:bg-emerald-600 text-white font-bold text-[10px] gap-1 shadow-sm">
+                          <Badge className="bg-emerald-600 text-white font-black text-[10px] gap-1 shadow-sm">
                             <ChefHat className="h-3 w-3" /> Cozinha
                           </Badge>
                         )}
+                      </div>
+
+                      {/* Preço em destaque na foto */}
+                      <div className="absolute bottom-2.5 left-3">
+                        <span className="font-mono font-black text-xl text-white drop-shadow-md">
+                          R$ {(item.price || 0).toFixed(2).replace('.', ',')}
+                        </span>
                       </div>
                     </div>
 
                     {/* Content */}
                     <div className="p-4 space-y-2">
                       <div className="flex justify-between items-start gap-2">
-                        <h3 className="font-bold text-base leading-snug text-foreground group-hover:text-emerald-600 transition-colors">
+                        <h3 className="font-black text-base sm:text-lg leading-tight text-foreground group-hover:text-emerald-600 transition-colors">
                           {item.name}
                         </h3>
                       </div>
 
                       {ingredientsList.length > 0 && (
-                        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed font-medium">
                           {ingredientsList
                             .map((i: any) => i.name || i.item)
                             .filter(Boolean)
-                            .join(', ')}
+                            .join(' · ')}
                         </p>
                       )}
                     </div>
                   </div>
 
-                  {/* Footer with Price and Add Action */}
-                  <div className="p-4 pt-0 flex items-center justify-between gap-2 border-t mt-2 pt-3">
-                    <div>
-                      <span className="text-xs text-muted-foreground block font-medium">Preço</span>
-                      <span className="font-mono font-bold text-lg text-emerald-700 dark:text-emerald-400">
-                        R$ {(item.price || 0).toFixed(2).replace('.', ',')}
-                      </span>
-                    </div>
+                  {/* Footer with Touch-First Action Button */}
+                  <div className="p-4 pt-0 flex items-center justify-between gap-2 border-t mt-1 pt-3">
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      {inCart ? `${inCart.quantity} na comanda` : 'Toque p/ pedir'}
+                    </span>
 
                     {inCart ? (
-                      <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 p-1 rounded-xl">
+                      <div className="flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/60 border-2 border-emerald-500 p-1 rounded-xl shadow-xs">
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-8 w-8 text-emerald-700 rounded-lg hover:bg-emerald-200/50"
+                          className="h-9 w-9 text-emerald-800 dark:text-emerald-200 rounded-lg hover:bg-emerald-200/50 min-h-[36px] min-w-[36px]"
                           onClick={(e) => {
                             e.stopPropagation()
                             updateCartQty(item.id, -1)
                           }}
                         >
-                          <Minus className="h-3.5 w-3.5" />
+                          <Minus className="h-4 w-4" />
                         </Button>
-                        <span className="font-mono font-bold text-sm w-6 text-center text-emerald-900 dark:text-emerald-100">
+                        <span className="font-mono font-black text-base w-7 text-center text-emerald-950 dark:text-emerald-100">
                           {inCart.quantity}
                         </span>
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-8 w-8 text-emerald-700 rounded-lg hover:bg-emerald-200/50"
+                          className="h-9 w-9 text-emerald-800 dark:text-emerald-200 rounded-lg hover:bg-emerald-200/50 min-h-[36px] min-w-[36px]"
                           onClick={(e) => {
                             e.stopPropagation()
                             updateCartQty(item.id, 1)
                           }}
                         >
-                          <Plus className="h-3.5 w-3.5" />
+                          <Plus className="h-4 w-4" />
                         </Button>
                       </div>
                     ) : (
                       <Button
                         onClick={() => addToCart(item, 1)}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-9 px-3 gap-1.5 shadow-sm rounded-xl"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-black h-11 px-4 gap-2 shadow-md rounded-xl min-h-[44px] text-sm active:scale-95 transition-transform"
                       >
                         <Plus className="h-4 w-4" />
                         Adicionar
@@ -784,22 +835,30 @@ export default function DigitalMenu() {
         )}
       </main>
 
-      {/* Floating Tray / Cart Pill Button (Bottom) */}
+      {/* Floating Tray / Cart Pill Button (Bottom Mobile-First) */}
       {totalCartCount > 0 && (
-        <div className="fixed bottom-5 inset-x-0 z-40 max-w-md mx-auto px-4 animate-fade-in-up">
+        <div className="fixed bottom-4 inset-x-0 z-40 max-w-md mx-auto px-4 animate-fade-in-up">
           <Button
             onClick={() => setIsCartOpen(true)}
-            className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold h-14 rounded-2xl shadow-2xl flex items-center justify-between px-5 text-base border border-emerald-400/30"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black h-15 rounded-2xl shadow-2xl flex items-center justify-between px-5 text-base border-2 border-emerald-400 active:scale-[0.99] transition-transform"
           >
-            <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center font-black">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-xl bg-white text-emerald-800 flex items-center justify-center font-black text-sm shadow-xs">
                 {totalCartCount}
               </div>
-              <span>Ver Minha Comanda</span>
+              <div className="text-left">
+                <span className="block leading-tight text-sm font-black">
+                  Minha Comanda · Mesa {tableNumber}
+                </span>
+                <span className="block text-[11px] text-emerald-100 font-medium">
+                  Toque para revisar e enviar
+                </span>
+              </div>
             </div>
-            <span className="font-mono font-extrabold text-lg">
-              R$ {totalCartPrice.toFixed(2).replace('.', ',')}
-            </span>
+            <div className="flex items-center gap-1.5 font-mono font-black text-lg">
+              <span>R$ {totalCartPrice.toFixed(2).replace('.', ',')}</span>
+              <ChevronRight className="h-5 w-5" />
+            </div>
           </Button>
         </div>
       )}
@@ -1077,31 +1136,52 @@ export default function DigitalMenu() {
           </DialogHeader>
 
           <form onSubmit={handleSaveComanda} className="space-y-4 py-2">
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="modal-table" className="text-sm font-bold">
-                Número da Mesa / Comanda *
+                Qual é a sua mesa? *
               </Label>
-              <Input
-                id="modal-table"
-                placeholder="Ex: 04, Mesa 12, Balcão 2..."
-                value={tableNumber}
-                onChange={(e) => setTableNumber(e.target.value)}
-                autoFocus
-                required
-                className="h-12 text-base font-bold"
-              />
+              {/* Botões de 1 toque para mesas comuns + input livre */}
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                {['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '12', 'Balcão'].map(
+                  (t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setTableNumber(t)}
+                      className={`h-11 rounded-xl text-xs font-black transition-all ${
+                        tableNumber === t
+                          ? 'bg-emerald-600 text-white shadow-md scale-105'
+                          : 'bg-muted hover:bg-muted/80 text-foreground border'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ),
+                )}
+              </div>
+
+              <div className="pt-1">
+                <Input
+                  id="modal-table"
+                  placeholder="Ou digite outro número de mesa..."
+                  value={tableNumber}
+                  onChange={(e) => setTableNumber(e.target.value)}
+                  required
+                  className="h-11 text-sm font-bold rounded-xl"
+                />
+              </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="modal-name" className="text-sm">
-                Seu Nome (Opcional)
+              <Label htmlFor="modal-name" className="text-xs font-semibold text-muted-foreground">
+                Seu Nome (Opcional — para chamar quando o prato estiver pronto):
               </Label>
               <Input
                 id="modal-name"
-                placeholder="Como podemos te chamar?"
+                placeholder="Ex: Ana, Carlos, Lucas..."
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
-                className="h-12 text-base"
+                className="h-11 text-sm rounded-xl"
               />
             </div>
 
@@ -1109,9 +1189,9 @@ export default function DigitalMenu() {
               <Button
                 type="submit"
                 disabled={!tableNumber.trim()}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 text-base rounded-xl"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black h-13 text-base rounded-xl shadow-lg shadow-emerald-600/30"
               >
-                Confirmar e Ver Cardápio <ArrowRight className="ml-2 h-4 w-4" />
+                Abrir Comanda e Fazer Pedido <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </DialogFooter>
           </form>

@@ -3,17 +3,13 @@ import {
   ChefHat,
   Clock,
   CheckCircle2,
-  AlertTriangle,
   Flame,
   Check,
-  RotateCcw,
-  Sparkles,
   Search,
-  Filter,
-  Layers,
   LayoutGrid,
   Kanban as KanbanIcon,
-  Archive,
+  Maximize2,
+  Minimize2,
   RefreshCw,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
@@ -44,6 +40,30 @@ export default function KitchenDashboard() {
   const [searchQuery, setSearchQuery] = useState('')
   const [draggedOrderId, setDraggedOrderId] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'kanban' | 'grid'>('kanban')
+  const [isFullscreen, setIsFullscreen] = useState(false)
+
+  // Toggle fullscreen for dedicated kitchen tablet mounts
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement
+        .requestFullscreen()
+        .then(() => setIsFullscreen(true))
+        .catch(() => {})
+    } else {
+      document
+        .exitFullscreen()
+        .then(() => setIsFullscreen(false))
+        .catch(() => {})
+    }
+  }
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement))
+    }
+    document.addEventListener('fullscreenchange', handleFsChange)
+    return () => document.removeEventListener('fullscreenchange', handleFsChange)
+  }, [])
 
   const loadOrders = async (isManualRefresh = false) => {
     try {
@@ -137,31 +157,37 @@ export default function KitchenDashboard() {
   const deliveredOrders = filteredOrders.filter((o) => o.status === 'delivered')
 
   return (
-    <div className="space-y-6 pb-20">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card p-4 sm:p-5 rounded-2xl border border-border/60 shadow-xs">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-2">
-              <ChefHat className="h-7 w-7 text-amber-600" />
-              KDS Cozinha & Triagem
-            </h1>
-            <Badge className="bg-amber-600 text-white text-[10px] font-bold">Kanban KDS</Badge>
+    <div className={`space-y-5 pb-20 ${isFullscreen ? 'p-3 bg-background min-h-screen' : ''}`}>
+      {/* Top Header — Limpo, direto e sem distrações visuais */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3.5 bg-card p-3.5 sm:p-4 rounded-2xl border border-border/60 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="h-11 w-11 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-600 flex items-center justify-center shrink-0">
+            <ChefHat className="h-6 w-6" />
           </div>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Triagem ágil de pedidos, esteira de cozimento e métricas de tempo em tempo real.
-          </p>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
+                KDS Cozinha
+              </h1>
+              <Badge className="bg-amber-600 text-white text-[10px] font-bold px-2 py-0.5">
+                Modo Tablet
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {filteredOrders.length} pedido(s) ativo(s) · Toque nos botões para avançar o preparo
+            </p>
+          </div>
         </div>
 
-        {/* Header Controls (Search & View Switch & Refresh) */}
+        {/* Header Controls (Search & View Switch & Refresh & Modo Tela Cheia) */}
         <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
-          <div className="relative flex-1 sm:w-60">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <div className="relative flex-1 sm:w-56">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar mesa ou prato..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-10 text-xs rounded-xl"
+              className="pl-9 h-11 text-xs rounded-xl"
             />
           </div>
 
@@ -190,12 +216,32 @@ export default function KitchenDashboard() {
             </button>
           </div>
 
+          {/* Botão de Tela Cheia para o Tablet da Cozinha */}
+          <Button
+            variant="outline"
+            onClick={toggleFullscreen}
+            className="h-11 px-3 rounded-xl shrink-0 font-bold text-xs gap-1.5"
+            title={isFullscreen ? 'Sair da tela cheia' : 'Modo Tablet Tela Cheia'}
+          >
+            {isFullscreen ? (
+              <>
+                <Minimize2 className="h-4 w-4" />
+                <span className="hidden md:inline">Sair Tela Cheia</span>
+              </>
+            ) : (
+              <>
+                <Maximize2 className="h-4 w-4" />
+                <span className="hidden md:inline">Tela Cheia</span>
+              </>
+            )}
+          </Button>
+
           <Button
             variant="outline"
             size="icon"
             onClick={() => loadOrders(true)}
             disabled={refreshing}
-            className="h-10 w-10 rounded-xl shrink-0"
+            className="h-11 w-11 rounded-xl shrink-0"
             title="Atualizar Pedidos"
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
