@@ -18,6 +18,7 @@ import {
   HelpCircle,
   CheckCircle2,
   Smartphone,
+  Briefcase,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -93,6 +94,8 @@ export default function Login() {
           navigate('/bar')
         } else if (userRole === 'waiter') {
           navigate('/garcom')
+        } else if (userRole === 'bpo') {
+          navigate('/bpo/dashboard')
         } else {
           // 'restaurant' ou outros
           navigate('/dashboard')
@@ -451,6 +454,16 @@ export default function Login() {
                 >
                   <Truck className="h-3.5 w-3.5 text-blue-600 shrink-0" />
                   <span className="truncate">Fornecedor</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => demoLogin('bpo@demo.oniceli.com')}
+                  disabled={loading}
+                  className="col-span-2 gap-1.5 text-xs rounded-xl min-h-[38px] justify-start border-slate-300 dark:border-slate-700 bg-slate-50/50 hover:bg-slate-100 dark:bg-slate-900/40"
+                >
+                  <Briefcase className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                  <span className="truncate font-semibold">BPO Consultoria & Gestão</span>
                 </Button>
               </div>
             </div>

@@ -25,7 +25,14 @@ export function BottomNav() {
     { title: 'Financ.', url: '/financeiro', icon: LineChart },
   ]
 
-  if (role === 'supplier') {
+  if (role === 'bpo') {
+    navItems = [
+      { title: 'Visão Geral', url: '/bpo/dashboard', icon: LayoutDashboard },
+      { title: 'Clientes BPO', url: '/bpo/clientes', icon: BookOpen },
+      { title: 'Alertas', url: '/bpo/recompra', icon: ClipboardList },
+      { title: 'Compras Col.', url: '/compras', icon: Package },
+    ]
+  } else if (role === 'supplier') {
     navItems = [
       { title: 'Dashboard', url: '/supplier/dashboard', icon: LayoutDashboard },
       { title: 'Pedidos', url: '/supplier/pedidos', icon: ClipboardList },

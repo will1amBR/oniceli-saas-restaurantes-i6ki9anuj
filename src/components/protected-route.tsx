@@ -2,14 +2,11 @@ import { Navigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 
+export type UserRole = 'restaurant' | 'supplier' | 'kitchen' | 'bar' | 'waiter' | 'bpo'
+
 interface ProtectedRouteProps {
   children: React.ReactNode
-  requiredRole?:
-    | 'restaurant'
-    | 'supplier'
-    | 'kitchen'
-    | 'waiter'
-    | Array<'restaurant' | 'supplier' | 'kitchen' | 'waiter'>
+  requiredRole?: UserRole | UserRole[]
 }
 
 export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
@@ -34,8 +31,12 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
         return '/supplier/dashboard'
       case 'kitchen':
         return '/cozinha'
+      case 'bar':
+        return '/bar'
       case 'waiter':
         return '/garcom'
+      case 'bpo':
+        return '/bpo/dashboard'
       case 'restaurant':
       default:
         return '/dashboard'
@@ -43,9 +44,10 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   }
 
   if (requiredRole) {
+    const userRole = role as UserRole
     const allowed = Array.isArray(requiredRole)
-      ? requiredRole.includes(role)
-      : role === requiredRole
+      ? requiredRole.includes(userRole)
+      : userRole === requiredRole
     if (!allowed) {
       return <Navigate to={getHomeRoute(role)} replace />
     }

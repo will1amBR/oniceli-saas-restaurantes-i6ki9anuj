@@ -91,26 +91,166 @@ const App = () => (
                 </ProtectedRoute>
               }
             >
-              <Route path="/dashboard" element={<Index />} />
-              <Route path="/cardapios" element={<Menu />} />
-              <Route path="/cardapio-gestao" element={<Menu />} />
-              <Route path="/estoque" element={<Inventory />} />
-              <Route path="/receitas" element={<Recipes />} />
-              <Route path="/vendas" element={<Sales />} />
-              <Route path="/compras" element={<Purchases />} />
-              <Route path="/fornecedores" element={<Suppliers />} />
-              <Route path="/financeiro" element={<Financial />} />
-              <Route path="/usuarios" element={<Users />} />
-              <Route path="/configuracoes" element={<Settings />} />
-              <Route path="/cozinha" element={<KitchenDashboard />} />
-              <Route path="/bar" element={<BarDashboard />} />
-              <Route path="/garcom" element={<WaiterDashboard />} />
-              <Route path="/supplier/dashboard" element={<SupplierDashboard />} />
-              <Route path="/supplier/pedidos" element={<SupplierOrders />} />
-              <Route path="/supplier/clientes" element={<SupplierClients />} />
-              <Route path="/bpo/dashboard" element={<BpoDashboard />} />
-              <Route path="/bpo/clientes" element={<BpoDashboard />} />
-              <Route path="/bpo/recompra" element={<BpoDashboard />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute requiredRole={['restaurant', 'bpo']}>
+                    <Index />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/cardapios"
+                element={
+                  <ProtectedRoute requiredRole={['restaurant', 'kitchen', 'bar', 'waiter', 'bpo']}>
+                    <Menu />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/cardapio-gestao"
+                element={
+                  <ProtectedRoute requiredRole={['restaurant', 'kitchen', 'bar', 'waiter', 'bpo']}>
+                    <Menu />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/estoque"
+                element={
+                  <ProtectedRoute requiredRole={['restaurant', 'kitchen', 'bar', 'bpo']}>
+                    <Inventory />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/receitas"
+                element={
+                  <ProtectedRoute requiredRole={['restaurant', 'kitchen', 'bar', 'bpo']}>
+                    <Recipes />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/vendas"
+                element={
+                  <ProtectedRoute requiredRole={['restaurant', 'bpo']}>
+                    <Sales />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/compras"
+                element={
+                  <ProtectedRoute requiredRole={['restaurant', 'bpo']}>
+                    <Purchases />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/fornecedores"
+                element={
+                  <ProtectedRoute requiredRole={['restaurant', 'bpo']}>
+                    <Suppliers />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/financeiro"
+                element={
+                  <ProtectedRoute requiredRole={['restaurant', 'bpo']}>
+                    <Financial />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/usuarios"
+                element={
+                  <ProtectedRoute requiredRole={['restaurant', 'bpo']}>
+                    <Users />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/configuracoes"
+                element={
+                  <ProtectedRoute requiredRole={['restaurant', 'bpo']}>
+                    <Settings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/cozinha"
+                element={
+                  <ProtectedRoute requiredRole={['kitchen', 'restaurant', 'waiter', 'bpo']}>
+                    <KitchenDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/bar"
+                element={
+                  <ProtectedRoute requiredRole={['bar', 'restaurant', 'waiter', 'bpo']}>
+                    <BarDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/garcom"
+                element={
+                  <ProtectedRoute requiredRole={['waiter', 'restaurant', 'kitchen', 'bar', 'bpo']}>
+                    <WaiterDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/supplier/dashboard"
+                element={
+                  <ProtectedRoute requiredRole="supplier">
+                    <SupplierDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/supplier/pedidos"
+                element={
+                  <ProtectedRoute requiredRole="supplier">
+                    <SupplierOrders />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/supplier/clientes"
+                element={
+                  <ProtectedRoute requiredRole="supplier">
+                    <SupplierClients />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/bpo/dashboard"
+                element={
+                  <ProtectedRoute requiredRole="bpo">
+                    <BpoDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/bpo/clientes"
+                element={
+                  <ProtectedRoute requiredRole="bpo">
+                    <BpoDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/bpo/recompra"
+                element={
+                  <ProtectedRoute requiredRole="bpo">
+                    <BpoDashboard />
+                  </ProtectedRoute>
+                }
+              />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
