@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { Loader2 } from 'lucide-react'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -30,6 +29,7 @@ import WaiterDashboard from './pages/WaiterDashboard'
 import BpoDashboard from './pages/BpoDashboard'
 import NotFound from './pages/NotFound'
 import Layout from './components/Layout'
+import { BrandSplash } from '@/components/brand-splash'
 
 function PWARegister() {
   useEffect(() => {
@@ -43,11 +43,7 @@ function PWARegister() {
 function AuthRedirect() {
   const { isAuthenticated, loading, user } = useAuth()
   if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    )
+    return <BrandSplash message="Verificando seu perfil..." />
   }
   if (isAuthenticated) {
     const role = user?.role

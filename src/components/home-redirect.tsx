@@ -1,18 +1,14 @@
 import { Navigate } from 'react-router-dom'
-import { Loader2 } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 import pb from '@/lib/pocketbase/client'
+import { BrandSplash } from '@/components/brand-splash'
 import Landing from '@/pages/Landing'
 
 export function HomeRedirect() {
   const { isAuthenticated, loading } = useAuth()
 
   if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    )
+    return <BrandSplash message="Verificando seu perfil..." />
   }
 
   if (isAuthenticated) {

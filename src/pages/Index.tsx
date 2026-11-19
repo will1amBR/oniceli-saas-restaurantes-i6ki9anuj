@@ -54,6 +54,7 @@ import { DashboardSkeleton } from '@/components/loading-skeletons'
 import { ErrorState } from '@/components/error-state'
 import { StatusBadge } from '@/components/status-badge'
 import { RestaurantAbcCurve } from '@/components/restaurant-abc-curve'
+import { WastePanel } from '@/components/waste-panel'
 
 const BRAND_COLORS = {
   emerald: '#059669',
@@ -685,6 +686,9 @@ export default function Index() {
 
       {/* ABC Curve for Menu */}
       <RestaurantAbcCurve inventory={inventory} sales={sales} menuItems={menuItems} />
+
+      {/* Waste / Divergences Management (Owner view) */}
+      <WastePanel />
     </div>
   )
 }

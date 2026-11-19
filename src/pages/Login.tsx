@@ -186,29 +186,30 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-emerald-900/10 via-background to-teal-900/10 p-4 sm:p-6 selection:bg-emerald-500 selection:text-white">
-      {/* Client Quick Access Banner */}
+      {/* Client Quick Access Banner — Entrar como Cliente */}
       <div className="w-full max-w-md mb-4 animate-fade-in-up">
         <Link
           to="/cardapio"
-          className="group flex items-center justify-between p-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl shadow-md hover:shadow-lg transition-all hover:scale-[1.01]"
+          aria-label="Entrar como Cliente — abrir o Cardápio Digital sem login"
+          className="group flex items-center justify-between p-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl shadow-lg shadow-emerald-600/25 hover:shadow-xl transition-all hover:scale-[1.01] min-h-[64px]"
         >
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center font-bold">
-              <Smartphone className="h-5 w-5" />
+            <div className="h-11 w-11 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center font-bold shrink-0">
+              <Smartphone className="h-6 w-6" />
             </div>
             <div>
-              <p className="font-extrabold text-sm flex items-center gap-1.5">
-                É cliente da mesa?
-                <span className="text-[10px] uppercase font-bold bg-white text-emerald-800 px-1.5 py-0.2 rounded-full">
+              <p className="font-black text-base flex items-center gap-2 tracking-tight">
+                Entrar como Cliente
+                <span className="text-[10px] uppercase font-bold bg-white text-emerald-800 px-2 py-0.5 rounded-full">
                   Sem Login
                 </span>
               </p>
               <p className="text-xs text-emerald-100">
-                Acesse o Cardápio Digital e faça seu pedido
+                Acesse o Cardápio Digital do Serena Café e faça seu pedido
               </p>
             </div>
           </div>
-          <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+          <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform shrink-0" />
         </Link>
       </div>
 

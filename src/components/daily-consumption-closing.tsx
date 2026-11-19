@@ -314,9 +314,39 @@ export function DailyConsumptionClosing({
           </div>
         </DialogHeader>
 
-        {/* Resumo do Dia no Topo (Touch-first KPI Cards) */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 py-2">
-          {/* Card 1: Itens Monitorados */}
+        {/* Resumo do Dia no Topo (Touch-first KPI Cards) — Desvio em R$ em destaque */}
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3 py-2">
+          {/* Card destaque: Desvio do Dia em R$ */}
+          <Card
+            className={`p-4 border-2 rounded-2xl shadow-none transition-colors col-span-2 ${
+              totalDivergenceCost > 0
+                ? 'bg-rose-500/10 border-rose-500/50'
+                : 'bg-emerald-500/10 border-emerald-500/50'
+            }`}
+          >
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <AlertTriangle
+                className={`h-4 w-4 ${totalDivergenceCost > 0 ? 'text-rose-600' : 'text-emerald-600'}`}
+              />
+              Desvio do Dia (perda em R$)
+            </p>
+            <p
+              className={`text-3xl sm:text-4xl font-black mt-1 font-mono ${
+                totalDivergenceCost > 0
+                  ? 'text-rose-700 dark:text-rose-400'
+                  : 'text-emerald-700 dark:text-emerald-400'
+              }`}
+            >
+              R$ {totalDivergenceCost.toFixed(2)}
+            </p>
+            <p className="text-xs mt-0.5 text-muted-foreground font-medium">
+              {highestDivergence
+                ? `Maior desvio: ${highestDivergence.name} (+${highestDivergence.difference_quantity} ${highestDivergence.unit})`
+                : 'Sem desperdício registrado até agora'}
+            </p>
+          </Card>
+
+          {/* Card: Itens Monitorados */}
           <Card className="p-3 bg-muted/30 border border-border/70 rounded-xl shadow-none">
             <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
               <Package className="h-3.5 w-3.5" /> Total Insumos
@@ -327,7 +357,7 @@ export function DailyConsumptionClosing({
             </p>
           </Card>
 
-          {/* Card 2: Consumo Teórico R$ */}
+          {/* Card: Consumo Teórico R$ */}
           <Card className="p-3 bg-muted/30 border border-border/70 rounded-xl shadow-none">
             <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
               <DollarSign className="h-3.5 w-3.5 text-blue-600" /> Custo Teórico
@@ -338,8 +368,8 @@ export function DailyConsumptionClosing({
             <p className="text-[10px] text-muted-foreground mt-0.5">Baixado nas comandas</p>
           </Card>
 
-          {/* Card 3: Consumo Real R$ */}
-          <Card className="p-3 bg-muted/30 border border-border/70 rounded-xl shadow-none">
+          {/* Card: Consumo Real R$ */}
+          <Card className="p-3 bg-muted/30 border border-border/70 rounded-xl shadow-none col-span-2">
             <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
               <TrendingUp className="h-3.5 w-3.5 text-emerald-600" /> Custo Real
             </p>
@@ -347,36 +377,6 @@ export function DailyConsumptionClosing({
               R$ {totalRealCost.toFixed(2)}
             </p>
             <p className="text-[10px] text-muted-foreground mt-0.5">Reportado pela cozinha</p>
-          </Card>
-
-          {/* Card 4: Maior Desvio / Perda */}
-          <Card
-            className={`p-3 border rounded-xl shadow-none transition-colors ${
-              totalDivergenceCost > 0
-                ? 'bg-rose-500/10 border-rose-500/40'
-                : 'bg-emerald-500/10 border-emerald-500/40'
-            }`}
-          >
-            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-              <AlertTriangle
-                className={`h-3.5 w-3.5 ${totalDivergenceCost > 0 ? 'text-rose-600' : 'text-emerald-600'}`}
-              />
-              Desvio Total
-            </p>
-            <p
-              className={`text-xl sm:text-2xl font-black mt-1 ${
-                totalDivergenceCost > 0
-                  ? 'text-rose-700 dark:text-rose-400'
-                  : 'text-emerald-700 dark:text-emerald-400'
-              }`}
-            >
-              R$ {totalDivergenceCost.toFixed(2)}
-            </p>
-            <p className="text-[10px] truncate mt-0.5 text-muted-foreground">
-              {highestDivergence
-                ? `Maior: ${highestDivergence.name} (+${highestDivergence.difference_quantity} ${highestDivergence.unit})`
-                : 'Sem desperdício registrado'}
-            </p>
           </Card>
         </div>
 
@@ -552,8 +552,8 @@ export function DailyConsumptionClosing({
           />
         </div>
 
-        {/* Footer Actions */}
-        <DialogFooter className="gap-2 sm:gap-0 pt-2 border-t mt-2">
+        {/* Footer Actions — fixo no rodapé do diálogo (tablet: sem scroll para salvar) */}
+        <DialogFooter className="gap-2 sm:gap-0 pt-3 border-t sticky bottom-0 bg-card/95 backdrop-blur z-10 -mx-4 sm:-mx-6 px-4 sm:px-6 pb-1 mt-2">
           <Button
             type="button"
             variant="outline"
@@ -568,7 +568,7 @@ export function DailyConsumptionClosing({
             type="button"
             onClick={handleSaveClosing}
             disabled={saving || items.length === 0}
-            className="h-12 sm:h-14 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm sm:text-base px-6 gap-2 min-h-[56px] shadow-md shadow-emerald-600/20 active:scale-[0.99] transition-all"
+            className="flex-1 h-12 sm:h-14 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm sm:text-base px-6 gap-2 min-h-[56px] shadow-md shadow-emerald-600/20 active:scale-[0.99] transition-all"
           >
             {saving ? (
               <>
